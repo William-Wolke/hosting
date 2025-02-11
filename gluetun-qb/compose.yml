@@ -1,0 +1,126 @@
+version: "3"
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun_mullvad
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 6081:6881 # qb
+      - 6081:6881/udp # qb
+      - 6011:6011 # qb
+      - 9696:9696 # Prowlarr
+      - 8191:8191 # FlareSolverr
+    env_file:
+       - ./.env
+    environment:
+      - VPN_SERVICE_PROVIDER="mullvad"
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=/run/secrets/mullvad_key
+      - WIREGUARD_ADDRESSES=/run/secrets/mullvad_addresses
+      - SERVER_CITIES=stockholm
+      - DOT=off
+      - DNS_KEEP_NAMESERVER=off
+      - DNS_ADDRESS=dns.mullvad.net
+    volumes:
+      - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
+    restart: unless-stopped
+    secrets:
+      - mullvad_key
+      - mullvad_addresses
+  flaresolverr:
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    env_file:
+       - ./.env
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+      - TZ=Europe/Stockholm
+    network_mode: "container:gluetun_mullvad"
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=CET
+    volumes:
+      - /home/william/Documents/hosting/prowlarr/data:/config
+
+    network_mode: "container:gluetun_mullvad"
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  qbittorent:
+    image: ghcr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    env_file:
+       - ./.env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Stockholm
+      - WEBUI_PORT=6011
+      - WebUI\AlternativeUIEnabled=false
+    volumes:
+      - /home/william/Documents/hosting/qbittorent/config/:/config
+      - /media/sambashare:/downloads
+    network_mode: "container:gluetun_mullvad"
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  tailscale:
+    container_name: tailscale
+    profiles:
+      - donotstart
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./tailscale/var/lib:/var/lib
+      - ./tailscale/state:/state
+      - /dev/net/tun:/dev/net/tun
+    network_mode: "container:gluetun_mullvad"
+    restart: unless-stopped
+    environment:
+      - TS_AUTHKEY=/run/secrets/ts_key
+      - TS_HOSTNAME=mullvad-exit-node
+      - TS_EXTRA_ARGS=--advertise-exit-node
+      - TS_NO_LOGS_NO_SUPPORT=true
+      - TS_STATE_DIR=/state
+    image: tailscale/tailscale
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  unbound:
+    image: "mvance/unbound:latest"
+    container_name: unbound
+    profiles:
+      - donotstart
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - /home/william/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf
+      - /home/william/unbound/conf.d/:/opt/unbound/etc/unbound/conf.d/
+    network_mode: "container:gluetun_mullvad"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+secrets:
+  mullvad_key:
+    file: secrets/mullvad.txt
+  mullvad_addresses:
+    file: secrets/mullvad_addresses.txt
+  ts_key:
+    file: secrets/ts_key
+    
+
