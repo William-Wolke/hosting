@@ -101,6 +101,8 @@ services:
     depends_on:
       gluetun:
         condition: service_healthy
+    secrets:
+      - ts_key
   unbound:
     image: "mvance/unbound:latest"
     container_name: unbound
