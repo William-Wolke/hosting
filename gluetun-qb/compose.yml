@@ -11,29 +11,25 @@ services:
       - 6011:6011 # qb
       - 9696:9696 # Prowlarr
       - 8191:8191 # FlareSolverr
-    env_file:
-       - ./.env
     environment:
-      - VPN_SERVICE_PROVIDER="mullvad"
-      - VPN_TYPE=wireguard
-      - WIREGUARD_PRIVATE_KEY=/run/secrets/mullvad_key
-      - WIREGUARD_ADDRESSES=/run/secrets/mullvad_addresses
-      - SERVER_CITIES=stockholm
-      - DOT=off
-      - DNS_KEEP_NAMESERVER=off
-      - DNS_ADDRESS=dns.mullvad.net
+      VPN_SERVICE_PROVIDER: mullvad
+      VPN_TYPE: wireguard
+      # WIREGUARD_PRIVATE_KEY: set in env
+      # WIREGUARD_ADDRESSES: set in env
+      SERVER_CITIES: stockholm
+      # DOT: on
+      # DNS_KEEP_NAMESERVER: off
+      # DNS_ADDRESS: 1.1.1.1
     volumes:
       - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
     restart: unless-stopped
-    secrets:
-      - mullvad_key
-      - mullvad_addresses
+    env_file:
+      - path: ../.gluetun.env
+        required: true
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
-    env_file:
-       - ./.env
     environment:
       - LOG_LEVEL=info
       - LOG_HTML=false
@@ -62,8 +58,6 @@ services:
   qbittorent:
     image: ghcr.io/linuxserver/qbittorrent
     container_name: qbittorrent
-    env_file:
-       - ./.env
     environment:
       - PUID=1000
       - PGID=1000
@@ -92,17 +86,18 @@ services:
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     environment:
-      - TS_AUTHKEY=/run/secrets/ts_key
+      # TS_AUTHKEY= set in env
       - TS_HOSTNAME=mullvad-exit-node
       - TS_EXTRA_ARGS=--advertise-exit-node
       - TS_NO_LOGS_NO_SUPPORT=true
       - TS_STATE_DIR=/state
     image: tailscale/tailscale
+    env_file:
+      - path: ../.ts.env
+        required: true
     depends_on:
       gluetun:
         condition: service_healthy
-    secrets:
-      - ts_key
   unbound:
     image: "mvance/unbound:latest"
     container_name: unbound
@@ -117,12 +112,4 @@ services:
     depends_on:
       gluetun:
         condition: service_healthy
-secrets:
-  mullvad_key:
-    file: secrets/mullvad.txt
-  mullvad_addresses:
-    file: secrets/mullvad_addresses.txt
-  ts_key:
-    file: secrets/ts_key
-    
 
