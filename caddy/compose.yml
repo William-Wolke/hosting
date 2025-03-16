@@ -1,0 +1,24 @@
+services:
+  caddy:
+    build: .
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    env_file:
+    - path: ../.caddy.env
+      required: true # default
+      # Set EMAIL, DOMAIN, DDNS_TOKEN
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - $PWD/conf:/etc/caddy
+      - $PWD/site:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
+
