@@ -115,6 +115,3 @@ services:
     depends_on:
       gluetun:
         condition: service_healthy
-networks:
-  wg-easy:
-    external: true
