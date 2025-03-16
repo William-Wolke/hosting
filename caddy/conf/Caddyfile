@@ -1,0 +1,37 @@
+{
+	email {$EMAIL}
+}
+*.{$DOMAIN}, {$DOMAIN} {
+	tls {
+		dns duckdns {$DDNS_TOKEN}
+	}
+	@vpn host vpn.{$DOMAIN}
+	handle @vpn {
+		reverse_proxy 192.168.0.129:51820
+	}
+	@wg-easy host wg-easy.{$DOMAIN}
+	handle @wg-easy {
+		reverse_proxy 192.168.0.129:51821
+	}
+	@mealie host mealie.{$DOMAIN}
+	handle @mealie {
+		reverse_proxy 192.168.0.129:9925
+	}
+	@qb host qb.{$DOMAIN}
+	handle @qb {
+		reverse_proxy 192.168.0.129:6011
+	}
+
+	@prowlarr host prowlarr.{$DOMAIN}
+	handle @prowlarr {
+		reverse_proxy 192.168.0.129:9696
+	}
+	@jellyfin host jellyfin.{$DOMAIN}
+	handle @jellyfin {
+		reverse_proxy 192.168.0.129:8096
+	}
+	@pihole host pihole.{$DOMAIN}
+	handle @pihole {
+		reverse_proxy 192.168.0.129:5353
+	}
+}
