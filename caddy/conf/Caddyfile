@@ -34,4 +34,8 @@
 	handle @pihole {
 		reverse_proxy 192.168.0.129:5353
 	}
+	@search host search.{$DOMAIN}
+	handle @search {
+		reverse_proxy 192.168.0.129:8080
+	}
 }
