@@ -26,9 +26,6 @@ services:
     env_file:
       - path: ../.gluetun.env
         required: true
-    networks:
-      wg-easy:
-        ipv4_address: 10.8.1.4
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
     image: ghcr.io/flaresolverr/flaresolverr:latest
