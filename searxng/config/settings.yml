@@ -81,10 +81,10 @@ search:
 server:
   # Is overwritten by ${SEARXNG_PORT} and ${SEARXNG_BIND_ADDRESS}
   port: 8888
-  bind_address: "127.0.0.1"
+  bind_address: "0.0.0.0"
   # public URL of the instance, to ensure correct inbound links. Is overwritten
   # by ${SEARXNG_URL}.
-  base_url: /  # "http://example.com/location"
+  base_url: https://search.wolke-lab.duckdns.org  # "http://example.com/location"
   # rate limit the number of request on the instance, block some bots.
   # Is overwritten by ${SEARXNG_LIMITER}
   limiter: false
