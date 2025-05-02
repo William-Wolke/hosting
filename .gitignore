@@ -1,3 +1,4 @@
 /secrets/*
 *.env
 vaultwarden/vw-data
+crafty/docker
