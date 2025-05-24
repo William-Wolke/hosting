@@ -19,8 +19,6 @@ services:
       TZ: Sweden/Stockholm
       MAX_WORKERS: 1
       WEB_CONCURRENCY: 1
-    networks:
-      - traefik
 volumes:
   mealie-data:
     name: "mealie_mealie-data"

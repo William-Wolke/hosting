@@ -5,7 +5,7 @@ services:
     image: phasecorex/red-discordbot
     restart: unless-stopped
     cap_add:
-      SYS_NICE
+     - SYS_NICE
     volumes:
       - ./redbot:/data
       - /media/samashare/music/localtracks/:/media/music/localtracks
