@@ -7,7 +7,7 @@ services:
     env_file:
     - path: ../.caddy.env
       required: true # default
-      # Set EMAIL, DOMAIN, DDNS_TOKEN
+      # Set EMAIL, DOMAIN, DDNS_TOKEN, CROWDSEC_URL, CROWDSEC_API_KEY, APPSEC_URL
     ports:
       - "80:80"
       - "443:443"
@@ -17,8 +17,39 @@ services:
       - $PWD/site:/srv
       - caddy_data:/data
       - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    networks:
+      crowdsec:
+    security_opt:
+      - no-new-privileges:true
+
+  crowdsec:
+    image: docker.io/crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      - GID=1000
+      - COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
+    env_file:
+      - path: ../.crowdsec.env
+        required: true
+        # Set BOUNCER_KEY_CADDY
+    volumes:
+      - crowdsec-db:/var/lib/crowdsec/data/
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
+      - caddy_logs:/var/log/caddy:ro
+    networks:
+      crowdsec:
+    restart: unless-stopped
+    security_opt:
+     - no-new-privileges:true
 
 volumes:
+  crowdsec-db:
+  caddy_logs:
   caddy_data:
   caddy_config:
+
+networks:
+  crowdsec:
+    driver: bridge
 
