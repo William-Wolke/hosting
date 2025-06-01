@@ -1,3 +1,7 @@
+networks:
+  proxy-net:
+    external: true
+
 services:
   mealie:
     image: ghcr.io/mealie-recipes/mealie:latest # 
@@ -9,6 +13,8 @@ services:
       resources:
         limits:
           memory: 1000M # 
+    networks:
+     - proxy-net
     volumes:
       - mealie-data:/app/data/
     environment:

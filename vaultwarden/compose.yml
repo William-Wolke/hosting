@@ -1,8 +1,14 @@
+networks:
+  proxy-net:
+    external: true
+
 services:
   vaultwarden:
     image: vaultwarden/server:latest
     container_name: vaultwarden
     restart: always
+    networks:
+      proxy-net:
     # Set DOMAIN
     env_file:
       - path: ../.vw.env

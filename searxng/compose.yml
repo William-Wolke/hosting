@@ -1,5 +1,10 @@
 version: "3.7"
 
+networks:
+  searxng:
+  proxy-net:
+    external: true
+
 services:
   redis:
     container_name: redis
@@ -28,6 +33,7 @@ services:
     restart: unless-stopped
     networks:
       - searxng
+      - proxy-net
     ports:
       - "8080:8080"
     volumes:
@@ -51,9 +57,6 @@ services:
       options:
         max-size: "1m"
         max-file: "1"
-
-networks:
-  searxng:
 
 volumes:
   valkey-data2:

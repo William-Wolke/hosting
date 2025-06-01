@@ -26,7 +26,7 @@
 	@mealie host mealie.{$DOMAIN}
 	route @mealie {
 		crowdsec
-		reverse_proxy 192.168.0.129:9925
+		reverse_proxy mealie:9000
 	}
 	@qb host qb.{$DOMAIN}
 	route @qb {
@@ -52,11 +52,11 @@
 	@search host search.{$DOMAIN}
 	route @search {
 		crowdsec
-		reverse_proxy 192.168.0.129:8080
+		reverse_proxy searxng:8080
 	}
 	@vaultwarden host vaultwarden.{$DOMAIN}
 	route @vaultwarden {
 		crowdsec
-		reverse_proxy 192.168.0.129:11001
+		reverse_proxy vaultwarden:80
 	}
 }

@@ -20,6 +20,7 @@ services:
       - caddy_logs:/var/log/caddy
     networks:
       crowdsec:
+      proxy-net:
     security_opt:
       - no-new-privileges:true
 
@@ -52,4 +53,7 @@ volumes:
 networks:
   crowdsec:
     driver: bridge
+  proxy-net:
+    driver: bridge
+    name: proxy-net
 
