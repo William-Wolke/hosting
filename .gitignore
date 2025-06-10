@@ -2,4 +2,5 @@
 *.env
 vaultwarden/vw-data
 crafty/docker
-redbot/redbot
+redbot/redbot/*
+!redbot/redbot/config.json
