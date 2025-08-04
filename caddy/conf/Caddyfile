@@ -59,4 +59,9 @@
 		crowdsec
 		reverse_proxy vaultwarden:80
 	}
+	@authentik host authentik.{$DOMAIN}
+	route @authentik {
+		crowdsec
+		reverse_proxy authentik-server:9000
+	}
 }
