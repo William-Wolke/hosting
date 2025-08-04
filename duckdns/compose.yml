@@ -7,13 +7,10 @@ services:
       # PUID: 1000 #optional
       # PGID: 1000 #optional
       TZ: CET #optional
-      # SUBDOMAINS: set in env file
-      # TOKEN: set in env file
+      SUBDOMAINS: ${SUBDOMAINS}
+      TOKEN: ${TOKEN}
       UPDATE_IP: ipv4 #optional
       LOG_FILE: false #optional
       # volumes:
       # - /path/to/duckdns/config:/config #optional
     restart: unless-stopped
-    env_file:
-      - path: ../.ddns.env
-        required: true
