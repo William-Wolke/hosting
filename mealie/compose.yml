@@ -4,7 +4,7 @@ networks:
 
 services:
   mealie:
-    image: ghcr.io/mealie-recipes/mealie:latest # 
+    image: ghcr.io/mealie-recipes/mealie:v2.8.0
     container_name: mealie
     restart: always
     ports:
