@@ -4,3 +4,4 @@ vaultwarden/vw-data
 crafty/docker
 redbot/redbot/*
 !redbot/redbot/config.json
+copyparty/copyparty
