@@ -1,3 +1,4 @@
+.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty
 mealie:
 	docker compose -f ./mealie/compose.yml down
 	docker compose -f ./mealie/compose.yml up -d
