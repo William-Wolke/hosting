@@ -64,4 +64,8 @@
 		crowdsec
 		reverse_proxy authentik-server:9000
 	}
+	@copyparty host copyparty.{$DOMAIN}
+	route @copyparty {
+		crowdsec
+		reverse_proxy copyparty:3923
 }
