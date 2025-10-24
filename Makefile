@@ -8,8 +8,7 @@ searxng:
 	docker compose -f ./searxng/compose.yml up -d
 
 caddy:
-	caddy_container_id=$(docker ps | grep caddy | awk '{print $1;}')
-	docker exec $caddy_container_id caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+	docker exec $$(docker ps | grep caddy | awk '{print $$1;}') caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 
 redbot:
 	docker compose -f ./redbot/compose.yml down
