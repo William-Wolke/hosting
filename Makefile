@@ -41,3 +41,7 @@ uptime:
 tech:
 	docker compose -f ./technitium/compose.yml down
 	docker compose -f ./technitium/compose.yml up -d
+
+tasks:
+	docker compose -f ./tasks/compose.yml down
+	docker compose -f ./tasks/compose.yml up -d
