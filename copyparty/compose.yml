@@ -15,6 +15,7 @@ services:
     volumes:
       - ./:/cfg:z
       - /media/sambashare/:/w:z
+    restart: unless-stopped
 
     environment:
       LD_PRELOAD: /usr/lib/libmimalloc-secure.so.NOPE
