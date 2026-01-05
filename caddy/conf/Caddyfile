@@ -73,4 +73,9 @@
 	route @uptime {
 		crowdsec
 		reverse_proxy uptime-kuma:3001
+	}
+	@technitium host technitium.{$DOMAIN}
+	route @technitium {
+		crowdsec
+		reverse_proxy dns-server:5380
 }
