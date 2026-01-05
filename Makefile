@@ -1,4 +1,4 @@
-.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty
+.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty technitium tasks
 mealie:
 	docker compose -f ./mealie/compose.yml down
 	docker compose -f ./mealie/compose.yml up -d
@@ -33,3 +33,11 @@ duckdns:
 copyparty:
 	docker compose -f ./copyparty/compose.yml down
 	docker compose -f ./copyparty/compose.yml up -d
+
+uptime:
+	docker compose -f ./uptime-kuma/compose.yml down
+	docker compose -f ./uptime-kuma/compose.yml up -d
+
+tech:
+	docker compose -f ./technitium/compose.yml down
+	docker compose -f ./technitium/compose.yml up -d

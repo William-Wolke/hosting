@@ -68,4 +68,9 @@
 	route @copyparty {
 		crowdsec
 		reverse_proxy copyparty:3923
+	}
+	@uptime host uptime.{$DOMAIN}
+	route @uptime {
+		crowdsec
+		reverse_proxy uptime-kuma:3001
 }

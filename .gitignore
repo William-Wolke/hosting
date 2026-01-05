@@ -5,3 +5,4 @@ crafty/docker
 redbot/redbot/*
 !redbot/redbot/config.json
 copyparty/copyparty
+uptime-kuma/data
