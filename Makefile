@@ -1,4 +1,4 @@
-.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty technitium tasks
+.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty technitium tasks crafty uptime-kuma
 mealie:
 	docker compose -f ./mealie/compose.yml down
 	docker compose -f ./mealie/compose.yml up -d
@@ -9,6 +9,10 @@ searxng:
 
 caddy:
 	docker exec $$(docker ps | grep caddy | awk '{print $$1;}') caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
+caddy-build:
+	docker compose -f ./caddy/compose.yml down
+	docker compose -f ./caddy/compose.yml up -d --build
 
 redbot:
 	docker compose -f ./redbot/compose.yml down
@@ -45,3 +49,9 @@ tech:
 tasks:
 	docker compose -f ./tasks/compose.yml down
 	docker compose -f ./tasks/compose.yml up -d
+crafty:
+	docker compose -f ./crafty/compose.yml down
+	docker compose -f ./crafty/compose.yml up -d
+uptime-kuma:
+	docker compose -f ./uptime-kuma/compose.yml down
+	docker compose -f ./uptime-kuma/compose.yml up -d
