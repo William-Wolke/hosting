@@ -7,7 +7,7 @@ services:
   tasks.md:
     networks:
      - proxy-net
-    image: baldissaramatheus/tasks.md
+    image: baldissaramatheus/tasks.md:3.2.2
     container_name: tasks.md
     environment:
       - PUID=1000
