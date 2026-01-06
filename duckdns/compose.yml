@@ -1,6 +1,6 @@
 services:
   duckdns:
-    image: lscr.io/linuxserver/duckdns:latest
+    image: lscr.io/linuxserver/duckdns:version-72c8259f
     container_name: duckdns
     network_mode: host #optional
     environment:

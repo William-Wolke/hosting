@@ -4,7 +4,7 @@ networks:
 
 services:
   vaultwarden:
-    image: vaultwarden/server:latest
+    image: vaultwarden/server:1.35.1
     container_name: vaultwarden
     restart: always
     networks:

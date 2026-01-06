@@ -1,7 +1,7 @@
 version: "3"
 services:
   gluetun:
-    image: qmcgaw/gluetun
+    image: qmcgaw/gluetun:v3.41.0
     container_name: gluetun_mullvad
     cap_add:
       - NET_ADMIN
@@ -28,7 +28,7 @@ services:
         required: true
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
-    image: ghcr.io/flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
@@ -41,7 +41,7 @@ services:
       gluetun:
         condition: service_healthy
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:nightly-version-2.3.2.5245
     container_name: prowlarr
     environment:
       - PUID=1000
@@ -56,59 +56,19 @@ services:
       gluetun:
         condition: service_healthy
   qbittorent:
-    image: ghcr.io/linuxserver/qbittorrent
+    image: linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Stockholm
-      - WEBUI_PORT=6011
-      - WebUI\AlternativeUIEnabled=false
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Stockholm
+      WEBUI_PORT: 6011
+      DOCKER_MODS: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - /home/william/Documents/hosting/qbittorent/config/:/config
       - /media/sambashare:/downloads
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
-    depends_on:
-      gluetun:
-        condition: service_healthy
-  tailscale:
-    container_name: tailscale
-    profiles:
-      - donotstart
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-    volumes:
-      - ./tailscale/var/lib:/var/lib
-      - ./tailscale/state:/state
-      - /dev/net/tun:/dev/net/tun
-    network_mode: "container:gluetun_mullvad"
-    restart: unless-stopped
-    environment:
-      # TS_AUTHKEY= set in env
-      - TS_HOSTNAME=mullvad-exit-node
-      - TS_EXTRA_ARGS=--advertise-exit-node
-      - TS_NO_LOGS_NO_SUPPORT=true
-      - TS_STATE_DIR=/state
-    image: tailscale/tailscale
-    env_file:
-      - path: ../.ts.env
-        required: true
-    depends_on:
-      gluetun:
-        condition: service_healthy
-  unbound:
-    image: "mvance/unbound:latest"
-    container_name: unbound
-    profiles:
-      - donotstart
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - /home/william/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf
-      - /home/william/unbound/conf.d/:/opt/unbound/etc/unbound/conf.d/
-    network_mode: "container:gluetun_mullvad"
     depends_on:
       gluetun:
         condition: service_healthy
