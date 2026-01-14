@@ -1,10 +1,10 @@
 version: 2
 updates:
-  - package-ecosystems: "docker-compose"
+  - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: weekly
-  - package-ecosystems: "docker"
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: weekly
