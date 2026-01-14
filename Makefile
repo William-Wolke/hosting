@@ -1,57 +1,85 @@
-.PHONY: mealie searxng caddy redbot vaultwarden wg-easy gluetun-qb duckdns copyparty technitium tasks crafty uptime-kuma
+DOCKER := docker --context envy
+
+.PHONY: mealie searxng caddy caddy-build caddy-reload redbot vaultwarden wg-easy gluetun-qb duckdns copyparty technitium tasks crafty uptime-kuma check-secrets create-secrets create-configs update-configs authentik
+
+# Secret and config management
+check-secrets:
+	./scripts/manage-secrets.sh check
+
+create-secrets:
+	./scripts/manage-secrets.sh create
+
+create-configs:
+	./scripts/manage-secrets.sh configs
+
+update-configs:
+	./scripts/manage-secrets.sh update-configs
+
+# Services
 mealie:
-	docker compose -f ./mealie/compose.yml down
-	docker compose -f ./mealie/compose.yml up -d
+	$(DOCKER) stack rm mealie || true
+	$(DOCKER) stack deploy -c ./mealie/compose.yml mealie
 
 searxng:
-	docker compose -f ./searxng/compose.yml down
-	docker compose -f ./searxng/compose.yml up -d
+	$(DOCKER) stack rm searxng || true
+	$(DOCKER) stack deploy -c ./searxng/compose.yml searxng
 
 caddy:
-	docker exec $$(docker ps | grep caddy | awk '{print $$1;}') caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+	$(DOCKER) stack rm caddy || true
+	$(DOCKER) stack deploy -c ./caddy/compose.yml caddy
 
 caddy-build:
-	docker compose -f ./caddy/compose.yml down
-	docker compose -f ./caddy/compose.yml up -d --build
+	$(DOCKER) compose -f ./caddy/compose.yml build
+	$(DOCKER) stack rm caddy || true
+	$(DOCKER) stack deploy -c ./caddy/compose.yml caddy
+
+caddy-reload:
+	$(DOCKER) exec $$($(DOCKER) ps -q -f name=caddy_caddy) caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 
 redbot:
-	docker compose -f ./redbot/compose.yml down
-	docker compose -f ./redbot/compose.yml up -d
+	$(DOCKER) stack rm redbot || true
+	$(DOCKER) stack deploy -c ./redbot/compose.yml redbot
 
 vaultwarden:
-	docker compose -f ./vaultwarden/compose.yml down
-	docker compose -f ./vaultwarden/compose.yml up -d
+	$(DOCKER) stack rm vaultwarden || true
+	$(DOCKER) stack deploy -c ./vaultwarden/compose.yml vaultwarden
 
 wg-easy:
-	docker compose -f ./wg-easy/compose.yml down
-	docker compose -f ./wg-easy/compose.yml up -d
+	$(DOCKER) stack rm wg-easy || true
+	$(DOCKER) stack deploy -c ./wg-easy/compose.yml wg-easy
 
 gluetun-qb:
-	docker compose -f ./gluetun-qb/compose.yml down
-	docker compose -f ./gluetun-qb/compose.yml up -d
+	$(DOCKER) stack rm gluetun-qb || true
+	$(DOCKER) stack deploy -c ./gluetun-qb/compose.yml gluetun-qb
 
 duckdns:
-	docker compose -f ./duckdns/compose.yml down
-	docker compose -f ./duckdns/compose.yml up -d
+	$(DOCKER) stack rm duckdns || true
+	$(DOCKER) stack deploy -c ./duckdns/compose.yml duckdns
 
 copyparty:
-	docker compose -f ./copyparty/compose.yml down
-	docker compose -f ./copyparty/compose.yml up -d
+	$(DOCKER) stack rm copyparty || true
+	$(DOCKER) stack deploy -c ./copyparty/compose.yml copyparty
 
 uptime:
-	docker compose -f ./uptime-kuma/compose.yml down
-	docker compose -f ./uptime-kuma/compose.yml up -d
+	$(DOCKER) stack rm uptime-kuma || true
+	$(DOCKER) stack deploy -c ./uptime-kuma/compose.yml uptime-kuma
 
 tech:
-	docker compose -f ./technitium/compose.yml down
-	docker compose -f ./technitium/compose.yml up -d
+	$(DOCKER) stack rm technitium || true
+	$(DOCKER) stack deploy -c ./technitium/compose.yml technitium
 
 tasks:
-	docker compose -f ./tasks/compose.yml down
-	docker compose -f ./tasks/compose.yml up -d
+	$(DOCKER) stack rm tasks || true
+	$(DOCKER) stack deploy -c ./tasks/compose.yml tasks
+
 crafty:
-	docker compose -f ./crafty/compose.yml down
-	docker compose -f ./crafty/compose.yml up -d
+	$(DOCKER) stack rm crafty || true
+	$(DOCKER) stack deploy -c ./crafty/compose.yml crafty
+
 uptime-kuma:
-	docker compose -f ./uptime-kuma/compose.yml down
-	docker compose -f ./uptime-kuma/compose.yml up -d
+	$(DOCKER) stack rm uptime-kuma || true
+	$(DOCKER) stack deploy -c ./uptime-kuma/compose.yml uptime-kuma
+
+authentik:
+	$(DOCKER) stack rm authentik || true
+	$(DOCKER) stack deploy -c ./authentik/compose.yml authentik
