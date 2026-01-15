@@ -4,17 +4,20 @@ services:
     restart: unless-stopped
     cap_add:
       - NET_ADMIN
-    env_file:
-    - path: ../.caddy.env
-      required: true # default
-      # Set EMAIL, DOMAIN, DDNS_TOKEN, CROWDSEC_URL, CROWDSEC_API_KEY, APPSEC_URL
+    secrets:
+      - caddy_email
+      - caddy_domain
+      - caddy_ddns_token
+      - crowdsec_api_key
+      - appsec_url
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - $PWD/conf:/etc/caddy
-      - $PWD/site:/srv
       - caddy_data:/data
       - caddy_config:/config
       - caddy_logs:/var/log/caddy
@@ -30,13 +33,13 @@ services:
     environment:
       - GID=1000
       - COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
-    env_file:
-      - path: ../.crowdsec.env
-        required: true
-        # Set BOUNCER_KEY_CADDY
+    secrets:
+      - bouncer_key_caddy
+    configs:
+      - source: crowdsec_acquis
+        target: /etc/crowdsec/acquis.yaml
     volumes:
       - crowdsec-db:/var/lib/crowdsec/data/
-      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
       - caddy_logs:/var/log/caddy:ro
     networks:
       crowdsec:
@@ -56,4 +59,24 @@ networks:
   proxy-net:
     driver: bridge
     name: proxy-net
+
+secrets:
+  caddy_email:
+    external: true
+  caddy_domain:
+    external: true
+  caddy_ddns_token:
+    external: true
+  crowdsec_api_key:
+    external: true
+  appsec_url:
+    external: true
+  bouncer_key_caddy:
+    external: true
+
+configs:
+  caddyfile:
+    external: true
+  crowdsec_acquis:
+    external: true
 

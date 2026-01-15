@@ -1,4 +1,3 @@
-version: "3"
 services:
   gluetun:
     image: qmcgaw/gluetun:v3.41.0
@@ -11,21 +10,18 @@ services:
       - 6011:6011 # qb
       - 9696:9696 # Prowlarr
       - 8191:8191 # FlareSolverr
+    secrets:
+      - gluetun_wireguard_private_key
+      - gluetun_wireguard_addresses
     environment:
       VPN_SERVICE_PROVIDER: mullvad
       VPN_TYPE: wireguard
-      # WIREGUARD_PRIVATE_KEY: set in env
-      # WIREGUARD_ADDRESSES: set in env
+      WIREGUARD_PRIVATE_KEY_FILE: /run/secrets/gluetun_wireguard_private_key
+      WIREGUARD_ADDRESSES_FILE: /run/secrets/gluetun_wireguard_addresses
       SERVER_CITIES: stockholm
-      # DOT: on
-      # DNS_KEEP_NAMESERVER: off
-      # DNS_ADDRESS: 1.1.1.1
     volumes:
-      - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
+      - gluetun-data:/gluetun
     restart: unless-stopped
-    env_file:
-      - path: ../.gluetun.env
-        required: true
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
     image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
@@ -48,14 +44,13 @@ services:
       - PGID=1000
       - TZ=CET
     volumes:
-      - /home/william/Documents/hosting/prowlarr/data:/config
-
+      - prowlarr-config:/config
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
-  qbittorent:
+  qbittorrent:
     image: linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     environment:
@@ -65,10 +60,21 @@ services:
       WEBUI_PORT: 6011
       DOCKER_MODS: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
-      - /home/william/Documents/hosting/qbittorent/config/:/config
+      - qbittorrent-config:/config
       - /media/sambashare:/downloads
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
+
+volumes:
+  gluetun-data:
+  prowlarr-config:
+  qbittorrent-config:
+
+secrets:
+  gluetun_wireguard_private_key:
+    external: true
+  gluetun_wireguard_addresses:
+    external: true

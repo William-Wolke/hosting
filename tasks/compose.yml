@@ -2,19 +2,21 @@ networks:
   proxy-net:
     external: true
 
-version: "3"
 services:
   tasks.md:
-    networks:
-     - proxy-net
     image: baldissaramatheus/tasks.md:3.2.2
-    container_name: tasks.md
+    networks:
+      - proxy-net
     environment:
-      - PUID=1000
-      - PGID=1000
+      PUID: 1000
+      PGID: 1000
     volumes:
-      - /media/sambashare/tasks:/tasks
-      - /home/william/tasks-config:/config
+      - tasks-data:/tasks
+      - tasks-config:/config
     restart: unless-stopped
     ports:
       - 8050:8080
+
+volumes:
+  tasks-data:
+  tasks-config:

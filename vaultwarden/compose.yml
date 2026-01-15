@@ -9,13 +9,23 @@ services:
     restart: always
     networks:
       proxy-net:
-    # Set DOMAIN
-    env_file:
-      - path: ../.vw.env
-        required: true
+    secrets:
+      - vaultwarden_domain
+      - vaultwarden_admin_token
     environment:
-      SIGNUPS_ALLOWED: "true" # Deactivate this with "false" after you have created your account so that no strangers can register
+      DOMAIN_FILE: /run/secrets/vaultwarden_domain
+      ADMIN_TOKEN_FILE: /run/secrets/vaultwarden_admin_token
+      SIGNUPS_ALLOWED: "true"
     volumes:
-      - ./vw-data:/data
+      - vaultwarden-data:/data
     ports:
       - 11001:80
+
+volumes:
+  vaultwarden-data:
+
+secrets:
+  vaultwarden_domain:
+    external: true
+  vaultwarden_admin_token:
+    external: true

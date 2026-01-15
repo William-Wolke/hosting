@@ -1,20 +1,18 @@
-version: "3.7"
-
 networks:
   searxng:
   proxy-net:
     external: true
 
 services:
-  redis:
-    container_name: redis
+  valkey:
+    container_name: searxng-valkey
     image: docker.io/valkey/valkey:8-alpine
     command: valkey-server --save 30 1 --loglevel warning
     restart: unless-stopped
     networks:
       - proxy-net
     volumes:
-      - valkey-data2:/data
+      - valkey-data:/data
     cap_drop:
       - ALL
     cap_add:
@@ -36,16 +34,17 @@ services:
       - proxy-net
     ports:
       - "8080:8080"
-    volumes:
-      - ./config:/etc/searxng:rw
+    configs:
+      - source: searxng_settings
+        target: /etc/searxng/settings.yml
+      - source: searxng_uwsgi
+        target: /etc/searxng/uwsgi.ini
+    secrets:
+      - searxng_secret_key
     environment:
-      # Set in env file
-      # SEARXNG_BASE_URL
-      - UWSGI_WORKERS=${SEARXNG_UWSGI_WORKERS:-4}
-      - UWSGI_THREADS=${SEARXNG_UWSGI_THREADS:-4}
-    env_file:
-      - path: ../.searxng.env
-        required: true
+      SEARXNG_SECRET_FILE: /run/secrets/searxng_secret_key
+      UWSGI_WORKERS: 4
+      UWSGI_THREADS: 4
     cap_drop:
       - ALL
     cap_add:
@@ -59,4 +58,14 @@ services:
         max-file: "1"
 
 volumes:
-  valkey-data2:
+  valkey-data:
+
+configs:
+  searxng_settings:
+    external: true
+  searxng_uwsgi:
+    external: true
+
+secrets:
+  searxng_secret_key:
+    external: true

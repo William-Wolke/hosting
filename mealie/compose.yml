@@ -5,42 +5,57 @@ networks:
 services:
   mealie:
     image: ghcr.io/mealie-recipes/mealie:v2.8.0
-    container_name: mealie
     restart: always
     ports:
-        - "9925:9000" # 
+      - "9925:9000"
     deploy:
       resources:
         limits:
-          memory: 1000M # 
+          memory: 1000M
     networks:
-     - proxy-net
+      - proxy-net
     volumes:
       - mealie-data:/app/data/
+    secrets:
+      - mealie_base_url
+      - mealie_oidc_config_url
+      - mealie_oidc_client_id
+      - mealie_oidc_client_secret
+      - mealie_oidc_user_group
+      - mealie_oidc_admin_group
     environment:
-      # Set Backend ENV Variables Here
-      ALLOW_SIGNUP: true
+      ALLOW_SIGNUP: "true"
       PUID: 1000
       PGID: 1000
-      TZ: Sweden/Stockholm
+      TZ: Europe/Stockholm
       MAX_WORKERS: 1
       WEB_CONCURRENCY: 1
-      BASE_URL: ${DOMAIN}
+      BASE_URL_FILE: /run/secrets/mealie_base_url
       # OIDC auth flow
-      OIDC_AUTH_ENABLED: false
+      OIDC_AUTH_ENABLED: "false"
       OIDC_PROVIDER_NAME: authentik
-      OIDC_CONFIGURATION_URL: ${OIDC_CONFIGURATION_URL}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
-      OIDC_SIGNUP_ENABLED: true
-      OIDC_USER_GROUP: ${OIDC_USER_GROUP}
-      OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
-      OIDC_AUTO_REDIRECT: false   # Optional: The login page will be bypassed and you will be sent directly to your Identity Provider.
-      OIDC_REMEMBER_ME: true     # Optional: By setting this value to true, a session will be extended as if "Remember Me" was checked
-      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS}
-    dns:
-     - ${DNS}
-     - "1.1.1.1"
+      OIDC_CONFIGURATION_URL_FILE: /run/secrets/mealie_oidc_config_url
+      OIDC_CLIENT_ID_FILE: /run/secrets/mealie_oidc_client_id
+      OIDC_CLIENT_SECRET_FILE: /run/secrets/mealie_oidc_client_secret
+      OIDC_SIGNUP_ENABLED: "true"
+      OIDC_USER_GROUP_FILE: /run/secrets/mealie_oidc_user_group
+      OIDC_ADMIN_GROUP_FILE: /run/secrets/mealie_oidc_admin_group
+      OIDC_AUTO_REDIRECT: "false"
+      OIDC_REMEMBER_ME: "true"
+
 volumes:
   mealie-data:
-    name: "mealie_mealie-data"
+
+secrets:
+  mealie_base_url:
+    external: true
+  mealie_oidc_config_url:
+    external: true
+  mealie_oidc_client_id:
+    external: true
+  mealie_oidc_client_secret:
+    external: true
+  mealie_oidc_user_group:
+    external: true
+  mealie_oidc_admin_group:
+    external: true

@@ -1,16 +1,20 @@
 services:
   duckdns:
     image: lscr.io/linuxserver/duckdns:version-72c8259f
-    container_name: duckdns
-    network_mode: host #optional
+    network_mode: host
+    secrets:
+      - duckdns_subdomains
+      - duckdns_token
     environment:
-      # PUID: 1000 #optional
-      # PGID: 1000 #optional
-      TZ: CET #optional
-      SUBDOMAINS: ${SUBDOMAINS}
-      TOKEN: ${TOKEN}
-      UPDATE_IP: ipv4 #optional
-      LOG_FILE: false #optional
-      # volumes:
-      # - /path/to/duckdns/config:/config #optional
+      TZ: CET
+      FILE__SUBDOMAINS: /run/secrets/duckdns_subdomains
+      FILE__TOKEN: /run/secrets/duckdns_token
+      UPDATE_IP: ipv4
+      LOG_FILE: "false"
     restart: unless-stopped
+
+secrets:
+  duckdns_subdomains:
+    external: true
+  duckdns_token:
+    external: true

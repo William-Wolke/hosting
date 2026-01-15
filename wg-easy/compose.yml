@@ -43,9 +43,12 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
-    env_file:
-      - path: ../.wg.env
-        required: true
+    secrets:
+      - wg_host
+      - wg_password_hash
+    environment:
+      WG_HOST_FILE: /run/secrets/wg_host
+      PASSWORD_HASH_FILE: /run/secrets/wg_password_hash
     networks:
       wg-easy:
         ipv4_address: 10.8.1.2
@@ -56,3 +59,9 @@ networks:
     ipam:
       config:
        - subnet: 10.8.1.0/24
+
+secrets:
+  wg_host:
+    external: true
+  wg_password_hash:
+    external: true

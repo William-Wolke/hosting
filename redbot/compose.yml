@@ -1,4 +1,3 @@
-version: "3.2"
 services:
   redbot:
     container_name: redbot
@@ -7,14 +6,20 @@ services:
     cap_add:
      - SYS_NICE
     volumes:
-      - ./redbot:/data
-      - /media/samashare/music/localtracks/:/media/music/localtracks
+      - redbot-data:/data
+      - /media/sambashare/music/localtracks/:/media/music/localtracks
+    secrets:
+      - discord_token
     environment:
-      # TOKEN: set in env file
-      PREFIX: !
+      TOKEN_FILE: /run/secrets/discord_token
+      PREFIX: "!"
       TZ: CET
       PUID: 1000
       NICENESS: -20
-    env_file:
-      - path: ../.discord.env
-        required: true
+
+volumes:
+  redbot-data:
+
+secrets:
+  discord_token:
+    external: true
