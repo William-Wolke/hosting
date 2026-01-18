@@ -1,3 +1,11 @@
+# VPN container with qBittorrent, Prowlarr, FlareSolverr
+# Uses network_mode:container which is not supported in Swarm mode
+# Run with: docker compose up -d (or make gluetun-qb)
+#
+# Required .env file variables:
+#   WIREGUARD_PRIVATE_KEY=<your-mullvad-private-key>
+#   WIREGUARD_ADDRESSES=<your-mullvad-address>/32
+
 services:
   gluetun:
     image: qmcgaw/gluetun:v3.41.0
@@ -10,17 +18,17 @@ services:
       - 6011:6011 # qb
       - 9696:9696 # Prowlarr
       - 8191:8191 # FlareSolverr
-    secrets:
-      - gluetun_wireguard_private_key
-      - gluetun_wireguard_addresses
+    env_file:
+      - .env
     environment:
       VPN_SERVICE_PROVIDER: mullvad
       VPN_TYPE: wireguard
-      WIREGUARD_PRIVATE_KEY_FILE: /run/secrets/gluetun_wireguard_private_key
-      WIREGUARD_ADDRESSES_FILE: /run/secrets/gluetun_wireguard_addresses
       SERVER_CITIES: stockholm
     volumes:
       - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
+    networks:
+      - default
+      - proxy-net
     restart: unless-stopped
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
@@ -68,8 +76,8 @@ services:
       gluetun:
         condition: service_healthy
 
-secrets:
-  gluetun_wireguard_private_key:
-    external: true
-  gluetun_wireguard_addresses:
+networks:
+  default:
+    # bridge network for container:gluetun networking
+  proxy-net:
     external: true

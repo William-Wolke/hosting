@@ -38,13 +38,13 @@
 	@qb host qb.{file./run/secrets/caddy_domain}
 	route @qb {
 		crowdsec
-		reverse_proxy 192.168.0.129:6011
+		reverse_proxy gluetun_mullvad:6011
 	}
 
 	@prowlarr host prowlarr.{file./run/secrets/caddy_domain}
 	route @prowlarr {
 		crowdsec
-		reverse_proxy 192.168.0.129:9696
+		reverse_proxy gluetun_mullvad:9696
 	}
 	@jellyfin host jellyfin.{file./run/secrets/caddy_domain}
 	route @jellyfin {
