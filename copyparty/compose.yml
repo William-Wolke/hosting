@@ -15,7 +15,6 @@ services:
         target: /cfg/copyparty.conf
     volumes:
       - /media/sambashare/:/w:z
-    restart: unless-stopped
     environment:
       LD_PRELOAD: /usr/lib/libmimalloc-secure.so.NOPE
       PYTHONUNBUFFERED: 1
@@ -26,6 +25,9 @@ services:
       timeout: 2s
       retries: 5
       start_period: 15s
+    deploy:
+      restart_policy:
+        condition: any
 
 configs:
   copyparty_conf:

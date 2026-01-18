@@ -1,6 +1,4 @@
 networks:
-  wg-easy:
-    external: true
   proxy-net:
     external: true
 
@@ -16,13 +14,12 @@ services:
       DNS_SERVER_DOMAIN: dns-server
     volumes:
       - technitium-config:/etc/dns
-    restart: unless-stopped
-    sysctls:
-      - net.ipv4.ip_local_port_range=1024 65535
     networks:
-      wg-easy:
-        ipv4_address: 10.8.1.3
-      proxy-net:
+      - proxy-net
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   technitium-config:
+    name: technitium-config

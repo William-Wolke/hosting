@@ -3,7 +3,7 @@ networks:
     external: true
 
 services:
-  tasks.md:
+  tasks-md:
     image: baldissaramatheus/tasks.md:3.2.2
     networks:
       - proxy-net
@@ -11,12 +11,10 @@ services:
       PUID: 1000
       PGID: 1000
     volumes:
-      - tasks-data:/tasks
-      - tasks-config:/config
-    restart: unless-stopped
+      - /media/sambashare/tasks:/tasks
+      - /home/william/tasks-config:/config
     ports:
       - 8050:8080
-
-volumes:
-  tasks-data:
-  tasks-config:
+    deploy:
+      restart_policy:
+        condition: any

@@ -11,7 +11,9 @@ services:
       FILE__TOKEN: /run/secrets/duckdns_token
       UPDATE_IP: ipv4
       LOG_FILE: "false"
-    restart: unless-stopped
+    deploy:
+      restart_policy:
+        condition: any
 
 secrets:
   duckdns_subdomains:

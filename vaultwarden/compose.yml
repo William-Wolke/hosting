@@ -5,8 +5,6 @@ networks:
 services:
   vaultwarden:
     image: vaultwarden/server:1.35.1
-    container_name: vaultwarden
-    restart: always
     networks:
       proxy-net:
     secrets:
@@ -18,11 +16,13 @@ services:
       SIGNUPS_ALLOWED: "true"
     volumes:
       - vaultwarden-data:/data
-    ports:
-      - 11001:80
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   vaultwarden-data:
+    external: true
 
 secrets:
   vaultwarden_domain:

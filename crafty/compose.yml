@@ -1,7 +1,6 @@
 services:
   crafty:
     image: registry.gitlab.com/crafty-controller/crafty-4:4.7.0
-    restart: always
     environment:
       TZ: Etc/UTC
     ports:
@@ -10,15 +9,11 @@ services:
       - "19132:19132/udp"
       - "25500-25600:25500-25600"
     volumes:
-      - crafty-backups:/crafty/backups
-      - crafty-logs:/crafty/logs
-      - crafty-servers:/crafty/servers
-      - crafty-config:/crafty/app/config
-      - crafty-import:/crafty/import
-
-volumes:
-  crafty-backups:
-  crafty-logs:
-  crafty-servers:
-  crafty-config:
-  crafty-import:
+      - ./docker/backups:/crafty/backups
+      - ./docker/logs:/crafty/logs
+      - ./docker/servers:/crafty/servers
+      - ./docker/config:/crafty/app/config
+      - ./docker/import:/crafty/import
+    deploy:
+      restart_policy:
+        condition: any

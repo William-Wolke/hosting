@@ -6,7 +6,6 @@ networks:
 services:
   postgresql:
     image: docker.io/library/postgres:16-alpine
-    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
       start_period: 20s
@@ -24,11 +23,13 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/authentik_pg_pass
       POSTGRES_USER: authentik
       POSTGRES_DB: authentik
+    deploy:
+      restart_policy:
+        condition: any
 
   redis:
     image: docker.io/library/redis:alpine
     command: --save 60 1 --loglevel warning
-    restart: unless-stopped
     networks:
       proxy-net:
       default:
@@ -40,10 +41,12 @@ services:
       timeout: 3s
     volumes:
       - redis:/data
+    deploy:
+      restart_policy:
+        condition: any
 
   authentik-server:
     image: ghcr.io/goauthentik/server:2025.4.1
-    restart: unless-stopped
     command: server
     secrets:
       - authentik_secret_key
@@ -59,20 +62,17 @@ services:
       proxy-net:
       default:
     volumes:
-      - authentik-media:/media
-      - authentik-templates:/templates
+      - ./media:/media
+      - ./custom-templates:/templates
     ports:
       - "9000:9000"
       - "9443:9443"
-    depends_on:
-      postgresql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: any
 
   worker:
     image: ghcr.io/goauthentik/server:2025.4.1
-    restart: unless-stopped
     command: worker
     secrets:
       - authentik_secret_key
@@ -90,23 +90,18 @@ services:
       default:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - authentik-media:/media
-      - authentik-certs:/certs
-      - authentik-templates:/templates
-    depends_on:
-      postgresql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - ./media:/media
+      - ./certs:/certs
+      - ./custom-templates:/templates
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   database:
-    driver: local
+    name: authentik-database
   redis:
-    driver: local
-  authentik-media:
-  authentik-certs:
-  authentik-templates:
+    name: authentik-redis
 
 secrets:
   authentik_secret_key:

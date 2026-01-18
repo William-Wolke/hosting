@@ -20,7 +20,7 @@ services:
       WIREGUARD_ADDRESSES_FILE: /run/secrets/gluetun_wireguard_addresses
       SERVER_CITIES: stockholm
     volumes:
-      - gluetun-data:/gluetun
+      - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
     restart: unless-stopped
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
@@ -44,7 +44,7 @@ services:
       - PGID=1000
       - TZ=CET
     volumes:
-      - prowlarr-config:/config
+      - /home/william/Documents/hosting/prowlarr/data:/config
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
@@ -60,18 +60,13 @@ services:
       WEBUI_PORT: 6011
       DOCKER_MODS: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
-      - qbittorrent-config:/config
+      - /home/william/Documents/hosting/qbittorent/config:/config
       - /media/sambashare:/downloads
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
-
-volumes:
-  gluetun-data:
-  prowlarr-config:
-  qbittorrent-config:
 
 secrets:
   gluetun_wireguard_private_key:

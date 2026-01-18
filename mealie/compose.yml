@@ -5,13 +5,14 @@ networks:
 services:
   mealie:
     image: ghcr.io/mealie-recipes/mealie:v2.8.0
-    restart: always
     ports:
       - "9925:9000"
     deploy:
       resources:
         limits:
           memory: 1000M
+      restart_policy:
+        condition: any
     networks:
       - proxy-net
     volumes:
@@ -45,6 +46,7 @@ services:
 
 volumes:
   mealie-data:
+    name: mealie-data
 
 secrets:
   mealie_base_url:

@@ -1,7 +1,6 @@
 services:
   caddy:
-    build: .
-    restart: unless-stopped
+    image: caddy-custom:latest
     cap_add:
       - NET_ADMIN
     secrets:
@@ -9,7 +8,6 @@ services:
       - caddy_domain
       - caddy_ddns_token
       - crowdsec_api_key
-      - appsec_url
     configs:
       - source: caddyfile
         target: /etc/caddy/Caddyfile
@@ -26,10 +24,12 @@ services:
       proxy-net:
     security_opt:
       - no-new-privileges:true
+    deploy:
+      restart_policy:
+        condition: any
 
   crowdsec:
     image: docker.io/crowdsecurity/crowdsec:v1.7.4
-    container_name: crowdsec
     environment:
       - GID=1000
       - COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
@@ -43,22 +43,26 @@ services:
       - caddy_logs:/var/log/caddy:ro
     networks:
       crowdsec:
-    restart: unless-stopped
     security_opt:
      - no-new-privileges:true
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   crowdsec-db:
+    name: crowdsec-db
   caddy_logs:
+    name: caddy_logs
   caddy_data:
+    name: caddy_data
   caddy_config:
+    name: caddy_config
 
 networks:
   crowdsec:
-    driver: bridge
   proxy-net:
-    driver: bridge
-    name: proxy-net
+    external: true
 
 secrets:
   caddy_email:
@@ -68,8 +72,6 @@ secrets:
   caddy_ddns_token:
     external: true
   crowdsec_api_key:
-    external: true
-  appsec_url:
     external: true
   bouncer_key_caddy:
     external: true

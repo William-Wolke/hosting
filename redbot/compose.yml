@@ -1,24 +1,27 @@
 services:
   redbot:
-    container_name: redbot
     image: phasecorex/red-discordbot
-    restart: unless-stopped
-    cap_add:
-     - SYS_NICE
     volumes:
       - redbot-data:/data
       - /media/sambashare/music/localtracks/:/media/music/localtracks
     secrets:
       - discord_token
     environment:
-      TOKEN_FILE: /run/secrets/discord_token
       PREFIX: "!"
       TZ: CET
       PUID: 1000
-      NICENESS: -20
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        export TOKEN=$$(cat /run/secrets/discord_token)
+        exec /bin/user-entrypoint /app/start-redbot.sh
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   redbot-data:
+    name: redbot-data
 
 secrets:
   discord_token:

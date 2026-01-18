@@ -163,7 +163,7 @@ create_secrets() {
             read -s value
             echo ""
             if [ -n "$value" ]; then
-                echo "$value" | $DOCKER secret create "$secret" -
+                printf '%s' "$value" | $DOCKER secret create "$secret" -
                 echo "Created secret: $secret"
             else
                 echo "Skipped: $secret"
