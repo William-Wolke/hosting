@@ -1,87 +1,94 @@
 {
-	email {$EMAIL}
+	email {file./run/secrets/caddy_email}
 	crowdsec {
 		api_url http://crowdsec:8080
-		api_key {$CROWDSEC_API_KEY}
+		api_key {file./run/secrets/crowdsec_api_key}
 		ticker_interval 15s
-		#appsec_url {$APPSEC_URL}
+		#appsec_url {file./run/secrets/appsec_url}
 		#disable_streaming
 		#enable_hard_fails
 	}
-}
-*.{$DOMAIN}, {$DOMAIN} {
-	tls {
-		dns duckdns {$DDNS_TOKEN}
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 5
+		}
+		format json
 	}
-	@vpn host vpn.{$DOMAIN}
+}
+*.{file./run/secrets/caddy_domain}, {file./run/secrets/caddy_domain} {
+	tls {
+		dns duckdns {file./run/secrets/caddy_ddns_token}
+	}
+	@vpn host vpn.{file./run/secrets/caddy_domain}
 	route @vpn {
 		crowdsec
 		reverse_proxy 192.168.0.129:51820
 	}
-	@wg-easy host wg-easy.{$DOMAIN}
+	@wg-easy host wg-easy.{file./run/secrets/caddy_domain}
 	route @wg-easy {
 		crowdsec
 		reverse_proxy 192.168.0.129:51821
 	}
-	@mealie host mealie.{$DOMAIN}
+	@mealie host mealie.{file./run/secrets/caddy_domain}
 	route @mealie {
 		crowdsec
 		reverse_proxy mealie:9000
 	}
-	@qb host qb.{$DOMAIN}
+	@qb host qb.{file./run/secrets/caddy_domain}
 	route @qb {
 		crowdsec
-		reverse_proxy 192.168.0.129:6011
+		reverse_proxy gluetun_mullvad:6011
 	}
 
-	@prowlarr host prowlarr.{$DOMAIN}
+	@prowlarr host prowlarr.{file./run/secrets/caddy_domain}
 	route @prowlarr {
 		crowdsec
-		reverse_proxy 192.168.0.129:9696
+		reverse_proxy gluetun_mullvad:9696
 	}
-	@jellyfin host jellyfin.{$DOMAIN}
+	@jellyfin host jellyfin.{file./run/secrets/caddy_domain}
 	route @jellyfin {
 		crowdsec
 		reverse_proxy 192.168.0.129:8096
 	}
-	@pihole host pihole.{$DOMAIN}
+	@pihole host pihole.{file./run/secrets/caddy_domain}
 	route @pihole {
 		crowdsec
 		reverse_proxy 192.168.0.129:5353
 	}
-	@search host search.{$DOMAIN}
+	@search host search.{file./run/secrets/caddy_domain}
 	route @search {
 		crowdsec
 		reverse_proxy searxng:8080
 	}
-	@vaultwarden host vaultwarden.{$DOMAIN}
+	@vaultwarden host vaultwarden.{file./run/secrets/caddy_domain}
 	route @vaultwarden {
 		crowdsec
 		reverse_proxy vaultwarden:80
 	}
-	@authentik host authentik.{$DOMAIN}
+	@authentik host authentik.{file./run/secrets/caddy_domain}
 	route @authentik {
 		crowdsec
 		reverse_proxy authentik-server:9000
 	}
-	@copyparty host copyparty.{$DOMAIN}
+	@copyparty host copyparty.{file./run/secrets/caddy_domain}
 	route @copyparty {
 		crowdsec
 		reverse_proxy copyparty:3923
 	}
-	@uptime host uptime.{$DOMAIN}
+	@uptime host uptime.{file./run/secrets/caddy_domain}
 	route @uptime {
 		crowdsec
 		reverse_proxy uptime-kuma:3001
 	}
-	@technitium host technitium.{$DOMAIN}
+	@technitium host technitium.{file./run/secrets/caddy_domain}
 	route @technitium {
 		crowdsec
 		reverse_proxy dns-server:5380
 	}
-	@tasks host tasks.{$DOMAIN}
+	@tasks host tasks.{file./run/secrets/caddy_domain}
 	route @tasks {
 		crowdsec
-		reverse_proxy tasks.md:8080
+		reverse_proxy tasks-md:8080
 	}
 }

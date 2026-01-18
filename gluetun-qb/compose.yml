@@ -1,4 +1,11 @@
-version: "3"
+# VPN container with qBittorrent, Prowlarr, FlareSolverr
+# Uses network_mode:container which is not supported in Swarm mode
+# Run with: docker compose up -d (or make gluetun-qb)
+#
+# Required .env file variables:
+#   WIREGUARD_PRIVATE_KEY=<your-mullvad-private-key>
+#   WIREGUARD_ADDRESSES=<your-mullvad-address>/32
+
 services:
   gluetun:
     image: qmcgaw/gluetun:v3.41.0
@@ -11,21 +18,18 @@ services:
       - 6011:6011 # qb
       - 9696:9696 # Prowlarr
       - 8191:8191 # FlareSolverr
+    env_file:
+      - .env
     environment:
       VPN_SERVICE_PROVIDER: mullvad
       VPN_TYPE: wireguard
-      # WIREGUARD_PRIVATE_KEY: set in env
-      # WIREGUARD_ADDRESSES: set in env
       SERVER_CITIES: stockholm
-      # DOT: on
-      # DNS_KEEP_NAMESERVER: off
-      # DNS_ADDRESS: 1.1.1.1
     volumes:
       - /home/william/Documents/hosting/gluetun-vpn/volume:/gluetun
+    networks:
+      - default
+      - proxy-net
     restart: unless-stopped
-    env_file:
-      - path: ../.gluetun.env
-        required: true
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
     image: ghcr.io/flaresolverr/flaresolverr:v3.4.6
@@ -49,13 +53,12 @@ services:
       - TZ=CET
     volumes:
       - /home/william/Documents/hosting/prowlarr/data:/config
-
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
-  qbittorent:
+  qbittorrent:
     image: linuxserver/qbittorrent:5.1.4
     container_name: qbittorrent
     environment:
@@ -65,10 +68,16 @@ services:
       WEBUI_PORT: 6011
       DOCKER_MODS: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
-      - /home/william/Documents/hosting/qbittorent/config/:/config
+      - /home/william/Documents/hosting/qbittorent/config:/config
       - /media/sambashare:/downloads
     network_mode: "container:gluetun_mullvad"
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
+
+networks:
+  default:
+    # bridge network for container:gluetun networking
+  proxy-net:
+    external: true

@@ -1,14 +1,18 @@
 networks:
   proxy-net:
     external: true
+
 services:
   uptime-kuma:
+    image: louislam/uptime-kuma:2
     networks:
       proxy-net:
-    image: louislam/uptime-kuma:2
-    restart: unless-stopped
     volumes:
-      - ./data:/app/data
-    ports:
-      # <Host Port>:<Container Port>
-      - "3001:3001"
+      - uptime-kuma-data:/app/data
+    deploy:
+      restart_policy:
+        condition: any
+
+volumes:
+  uptime-kuma-data:
+    name: uptime-kuma-data

@@ -1,20 +1,21 @@
 services:
   caddy:
-    build: .
-    restart: unless-stopped
+    image: caddy-custom:latest
     cap_add:
       - NET_ADMIN
-    env_file:
-    - path: ../.caddy.env
-      required: true # default
-      # Set EMAIL, DOMAIN, DDNS_TOKEN, CROWDSEC_URL, CROWDSEC_API_KEY, APPSEC_URL
+    secrets:
+      - caddy_email
+      - caddy_domain
+      - caddy_ddns_token
+      - crowdsec_api_key
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - $PWD/conf:/etc/caddy
-      - $PWD/site:/srv
       - caddy_data:/data
       - caddy_config:/config
       - caddy_logs:/var/log/caddy
@@ -23,37 +24,61 @@ services:
       proxy-net:
     security_opt:
       - no-new-privileges:true
+    deploy:
+      restart_policy:
+        condition: any
 
   crowdsec:
     image: docker.io/crowdsecurity/crowdsec:v1.7.4
-    container_name: crowdsec
     environment:
       - GID=1000
       - COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors
-    env_file:
-      - path: ../.crowdsec.env
-        required: true
-        # Set BOUNCER_KEY_CADDY
+    secrets:
+      - bouncer_key_caddy
+    configs:
+      - source: crowdsec_acquis
+        target: /etc/crowdsec/acquis.yaml
     volumes:
       - crowdsec-db:/var/lib/crowdsec/data/
-      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
       - caddy_logs:/var/log/caddy:ro
     networks:
       crowdsec:
-    restart: unless-stopped
     security_opt:
      - no-new-privileges:true
+    deploy:
+      restart_policy:
+        condition: any
 
 volumes:
   crowdsec-db:
+    name: crowdsec-db
   caddy_logs:
+    name: caddy_logs
   caddy_data:
+    name: caddy_data
   caddy_config:
+    name: caddy_config
 
 networks:
   crowdsec:
-    driver: bridge
   proxy-net:
-    driver: bridge
-    name: proxy-net
+    external: true
+
+secrets:
+  caddy_email:
+    external: true
+  caddy_domain:
+    external: true
+  caddy_ddns_token:
+    external: true
+  crowdsec_api_key:
+    external: true
+  bouncer_key_caddy:
+    external: true
+
+configs:
+  caddyfile:
+    external: true
+  crowdsec_acquis:
+    external: true
 

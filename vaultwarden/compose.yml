@@ -5,17 +5,27 @@ networks:
 services:
   vaultwarden:
     image: vaultwarden/server:1.35.1
-    container_name: vaultwarden
-    restart: always
     networks:
       proxy-net:
-    # Set DOMAIN
-    env_file:
-      - path: ../.vw.env
-        required: true
+    secrets:
+      - vaultwarden_domain
+      - vaultwarden_admin_token
     environment:
-      SIGNUPS_ALLOWED: "true" # Deactivate this with "false" after you have created your account so that no strangers can register
+      DOMAIN_FILE: /run/secrets/vaultwarden_domain
+      ADMIN_TOKEN_FILE: /run/secrets/vaultwarden_admin_token
+      SIGNUPS_ALLOWED: "true"
     volumes:
-      - ./vw-data:/data
-    ports:
-      - 11001:80
+      - vaultwarden-data:/data
+    deploy:
+      restart_policy:
+        condition: any
+
+volumes:
+  vaultwarden-data:
+    external: true
+
+secrets:
+  vaultwarden_domain:
+    external: true
+  vaultwarden_admin_token:
+    external: true
