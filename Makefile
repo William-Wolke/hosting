@@ -113,8 +113,8 @@ create-networks:
 	@$(DOCKER) network create --driver overlay --attachable proxy-net 2>/dev/null && \
 		echo "Created: proxy-net" || \
 		echo "Exists:  proxy-net"
-	@$(DOCKER) network create --driver overlay --attachable --subnet 10.8.1.0/24 wg-easy 2>/dev/null && \
-		echo "Created: wg-easy (subnet 10.8.1.0/24)" || \
+	@$(DOCKER) network create --driver overlay --attachable 2>/dev/null && \
+		echo "Created: wg-easy" || \
 		echo "Exists:  wg-easy"
 	@echo ""
 	@echo "Networks:"
