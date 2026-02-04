@@ -286,3 +286,37 @@ gluetun-qb-up:
 
 gluetun-qb-down:
 	$(DOCKER) compose -f ./gluetun-qb/compose.yml down
+
+# =============================================================================
+# Backup Management
+# =============================================================================
+
+# Install vaultwarden backup system on remote server
+vaultwarden-backup-install:
+	@echo "Installing Vaultwarden backup system..."
+	scp ./vaultwarden/scripts/backup.sh william@192.168.0.129:/tmp/
+	scp ./vaultwarden/scripts/restore.sh william@192.168.0.129:/tmp/
+	scp ./vaultwarden/scripts/vaultwarden-backup.service william@192.168.0.129:/tmp/
+	scp ./vaultwarden/scripts/vaultwarden-backup.timer william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 "sudo mkdir -p /opt/vaultwarden-backup /var/backups/vaultwarden && \
+		sudo mv /tmp/backup.sh /tmp/restore.sh /opt/vaultwarden-backup/ && \
+		sudo chmod +x /opt/vaultwarden-backup/*.sh && \
+		sudo mv /tmp/vaultwarden-backup.service /tmp/vaultwarden-backup.timer /etc/systemd/system/ && \
+		sudo chown -R william:william /var/backups/vaultwarden && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl enable --now vaultwarden-backup.timer && \
+		echo '' && echo 'Backup system installed! Timer status:' && \
+		systemctl status vaultwarden-backup.timer --no-pager"
+
+# Run vaultwarden backup manually
+vaultwarden-backup:
+	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/backup.sh /var/backups/vaultwarden"
+
+# List vaultwarden backups
+vaultwarden-backup-list:
+	ssh william@192.168.0.129 "ls -lht /var/backups/vaultwarden/*.tar.gz 2>/dev/null | head -10 || echo 'No backups found'"
+
+# Restore vaultwarden from backup (usage: make vaultwarden-restore BACKUP=filename.tar.gz)
+vaultwarden-restore:
+	@if [ -z "$(BACKUP)" ]; then echo "Usage: make vaultwarden-restore BACKUP=vaultwarden-backup-YYYYMMDD-HHMMSS.tar.gz"; exit 1; fi
+	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/restore.sh /var/backups/vaultwarden/$(BACKUP)"

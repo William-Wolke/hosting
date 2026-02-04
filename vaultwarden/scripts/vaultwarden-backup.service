@@ -1,0 +1,13 @@
+[Unit]
+Description=Vaultwarden Backup Service
+After=docker.service
+
+[Service]
+Type=oneshot
+Environment=DOCKER_CONTEXT=local
+ExecStart=/opt/vaultwarden-backup/backup.sh /var/backups/vaultwarden
+User=william
+Group=william
+
+[Install]
+WantedBy=multi-user.target
