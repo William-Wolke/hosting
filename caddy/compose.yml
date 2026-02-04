@@ -3,6 +3,11 @@ services:
     image: caddy-custom:latest
     cap_add:
       - NET_ADMIN
+    environment:
+      CADDY_DOMAIN_FILE: /run/secrets/caddy_domain
+      CADDY_EMAIL_FILE: /run/secrets/caddy_email
+      CADDY_DDNS_TOKEN_FILE: /run/secrets/caddy_ddns_token
+      CROWDSEC_API_KEY_FILE: /run/secrets/crowdsec_api_key
     secrets:
       - caddy_email
       - caddy_domain

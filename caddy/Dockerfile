@@ -11,3 +11,10 @@ RUN xcaddy build \
 FROM caddy:2.11
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# Entrypoint script to load secrets as environment variables
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
