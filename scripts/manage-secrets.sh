@@ -63,7 +63,31 @@ CONFIGS=(
     "copyparty_conf:copyparty/copyparty.conf"
 )
 
-# Helper to update a config (remove old, create new)
+# Helper: list services that mount a config matching <base_name> or <base_name>_<hex>.
+# Output lines: "service|config_name|target_path"
+_services_using_config() {
+    local base_name="$1"
+    local svc cfgs line cur tgt
+    while read -r svc; do
+        [ -z "$svc" ] && continue
+        cfgs=$($DOCKER service inspect "$svc" --format \
+            '{{range .Spec.TaskTemplate.ContainerSpec.Configs}}{{.ConfigName}}={{.File.Name}}{{"\n"}}{{end}}' 2>/dev/null) || continue
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            cur="${line%%=*}"
+            tgt="${line#*=}"
+            if [[ "$cur" == "$base_name" ]] || [[ "$cur" =~ ^${base_name}_[0-9a-f]+$ ]]; then
+                printf '%s|%s|%s\n' "$svc" "$cur" "$tgt"
+            fi
+        done <<< "$cfgs"
+    done < <($DOCKER service ls --format '{{.Name}}')
+}
+
+# Update a config without requiring `stack rm`. Creates a content-hashed versioned
+# config (caddyfile_<sha>), rolls each dependent service onto it via
+# `service update --config-rm/--config-add`, then refreshes the canonical alias so
+# future `docker stack deploy` from compose still resolves the bare name. Old
+# versioned configs are garbage-collected.
 update_config() {
     local config_name="$1"
     local config_path="$2"
@@ -74,13 +98,58 @@ update_config() {
         return 1
     fi
 
-    if $DOCKER config inspect "$config_name" &>/dev/null; then
-        echo "Removing old config: $config_name"
-        $DOCKER config rm "$config_name"
+    local sha versioned services_data svc cur tgt old any_swap=false
+    sha=$(sha256sum "$full_path" | awk '{print substr($1,1,12)}')
+    versioned="${config_name}_${sha}"
+    services_data=$(_services_using_config "$config_name")
+
+    # 1. Create the versioned config (idempotent — same file → same name)
+    if ! $DOCKER config inspect "$versioned" &>/dev/null; then
+        $DOCKER config create "$versioned" "$full_path" >/dev/null
+        echo "$config_name: created versioned config $versioned"
     fi
 
-    $DOCKER config create "$config_name" "$full_path"
-    echo "Created config: $config_name"
+    # 2. Swap every dependent service onto the versioned config
+    if [ -n "$services_data" ]; then
+        while IFS='|' read -r svc cur tgt; do
+            [ -z "$svc" ] && continue
+            if [ "$cur" = "$versioned" ]; then
+                continue
+            fi
+            any_swap=true
+            echo "$config_name: rotating $svc ($cur → $versioned, target=$tgt)"
+            $DOCKER service update --quiet \
+                --config-rm "$cur" \
+                --config-add "source=$versioned,target=$tgt" \
+                "$svc" >/dev/null
+        done <<< "$services_data"
+        if [ "$any_swap" = "false" ]; then
+            echo "$config_name: services already on version ${sha:0:8}, no rotation needed"
+        fi
+    fi
+
+    # 3. Refresh the canonical alias so `docker stack deploy` from compose still works.
+    # After step 2, no service references the canonical name, so rm is safe.
+    if $DOCKER config inspect "$config_name" &>/dev/null; then
+        if $DOCKER config rm "$config_name" 2>/dev/null; then
+            $DOCKER config create "$config_name" "$full_path" >/dev/null
+            echo "$config_name: refreshed canonical alias"
+        else
+            echo "$config_name: WARNING canonical still in use, alias not refreshed"
+        fi
+    else
+        $DOCKER config create "$config_name" "$full_path" >/dev/null
+        echo "$config_name: created canonical alias"
+    fi
+
+    # 4. Garbage-collect old versioned configs
+    while read -r old; do
+        [ -z "$old" ] && continue
+        [ "$old" = "$versioned" ] && continue
+        if $DOCKER config rm "$old" 2>/dev/null; then
+            echo "$config_name: removed orphaned $old"
+        fi
+    done < <($DOCKER config ls --format '{{.Name}}' | grep -E "^${config_name}_[0-9a-f]+$" || true)
 }
 
 check_secrets() {
@@ -203,7 +272,7 @@ create_configs() {
 
 update_configs() {
     echo "Updating Docker configs from local files..."
-    echo "WARNING: This will remove and recreate configs. Services using them must be redeployed."
+    echo "Dependent services will be rolled onto the new config automatically."
     echo ""
 
     for entry in "${CONFIGS[@]}"; do
