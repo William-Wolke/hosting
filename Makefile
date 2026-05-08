@@ -113,9 +113,13 @@ create-networks:
 	@$(DOCKER) network create --driver overlay --attachable proxy-net 2>/dev/null && \
 		echo "Created: proxy-net" || \
 		echo "Exists:  proxy-net"
-	@$(DOCKER) network create --driver overlay --attachable 2>/dev/null && \
+	@$(DOCKER) network create --driver overlay --attachable wg-easy 2>/dev/null && \
 		echo "Created: wg-easy" || \
 		echo "Exists:  wg-easy"
+
+	@$(DOCKER) network create --driver overlay --attachable caddy_crowdsec 2>/dev/null && \
+		echo "Created: caddy_crowdsec" || \
+		echo "Exists:  caddy_crowdsec"
 	@echo ""
 	@echo "Networks:"
 	@$(DOCKER) network ls --filter driver=overlay
@@ -201,7 +205,12 @@ caddy-build:
 
 # Reload caddy configuration without full restart
 caddy-reload:
-	$(DOCKER) exec $$($(DOCKER) ps -q -f name=caddy_caddy) caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+	$(DOCKER) exec $$($(DOCKER) ps -q -f name=caddy_caddy) sh -c '\
+		export CADDY_DOMAIN=$$(cat /run/secrets/caddy_domain) \
+		       CADDY_EMAIL=$$(cat /run/secrets/caddy_email) \
+		       CADDY_DDNS_TOKEN=$$(cat /run/secrets/caddy_ddns_token) \
+		       CROWDSEC_API_KEY=$$(cat /run/secrets/crowdsec_api_key); \
+		caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
 
 # Identity provider / SSO
 authentik:
@@ -249,7 +258,12 @@ vaultwarden:
 # Discord bot
 redbot:
 	$(DOCKER) stack rm redbot || true
+	sleep 5
 	$(DOCKER) stack deploy -c ./redbot/compose.yml redbot
+
+redbot-playlist-sync-install:
+
+	
 
 # File sharing
 copyparty:
