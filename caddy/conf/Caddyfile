@@ -20,6 +20,12 @@
 	tls {
 		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
+	@webroot host {$CADDY_DOMAIN} *.{$CADDY_DOMAIN}
+	route @webroot {
+		crowdsec
+		root * /var/www/kubbe-web
+		file_server
+	}
 	@vpn host vpn.{$CADDY_DOMAIN}
 	route @vpn {
 		crowdsec
