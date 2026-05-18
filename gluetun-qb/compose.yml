@@ -45,7 +45,7 @@ services:
       gluetun:
         condition: service_healthy
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:nightly-version-2.3.2.5245
+    image: lscr.io/linuxserver/prowlarr:version-2.3.5.5327
     container_name: prowlarr
     environment:
       - PUID=1000
