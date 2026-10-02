@@ -1,0 +1,22 @@
+[Unit]
+Description=HomeAssistant Container
+Documentation=https://www.home-assistant.io/
+After=network-online.target
+
+[Container]
+ContainerName=homeassistant
+HostName=homeassistant
+Image=docker.io/homeassistant/home-assistant:2026.9.4
+Environment=TZ=Europe/Stockholm
+PublishPort=8124:8123
+LogDriver=journald
+Volume=homeassistant-config.volume:/config
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=900
+TimeoutStopSec=90
+
+[Install]
+WantedBy=default.target

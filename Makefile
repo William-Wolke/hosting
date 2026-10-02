@@ -28,7 +28,7 @@ DOCKER := docker --context envy
         check-volumes inspect-volumes backup-volumes migrate-volumes \
         mealie searxng caddy caddy-build caddy-reload redbot vaultwarden wg-easy \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
-        tasks crafty uptime uptime-kuma tech authentik
+        tasks crafty uptime uptime-kuma tech authentik homeassistant
 
 # =============================================================================
 # Help
@@ -334,3 +334,9 @@ vaultwarden-backup-list:
 vaultwarden-restore:
 	@if [ -z "$(BACKUP)" ]; then echo "Usage: make vaultwarden-restore BACKUP=vaultwarden-backup-YYYYMMDD-HHMMSS.tar.gz"; exit 1; fi
 	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/restore.sh /var/backups/vaultwarden/$(BACKUP)"
+
+homeassistant:
+	ssh william@192.168.0.129 'mkdir -p ~/.config/containers/systemd'
+	scp ./homeassistant/homeassistant.container ./homeassistant/homeassistant-config.volume \
+		william@192.168.0.129:~/.config/containers/systemd/
+	ssh -t william@192.168.0.129 'systemctl --user daemon-reload && systemctl --user restart homeassistant'
