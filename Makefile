@@ -336,7 +336,12 @@ vaultwarden-restore:
 	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/restore.sh /var/backups/vaultwarden/$(BACKUP)"
 
 homeassistant:
-	ssh william@192.168.0.129 'mkdir -p ~/.config/containers/systemd'
 	scp ./homeassistant/homeassistant.container ./homeassistant/homeassistant-config.volume \
-		william@192.168.0.129:~/.config/containers/systemd/
-	ssh -t william@192.168.0.129 'systemctl --user daemon-reload && systemctl --user restart homeassistant'
+		william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo install -Dm644 /tmp/homeassistant.container /etc/containers/systemd/homeassistant.container && \
+		sudo install -Dm644 /tmp/homeassistant-config.volume /etc/containers/systemd/homeassistant-config.volume && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart homeassistant.service && \
+		sudo systemctl status homeassistant.service --no-pager \
+	'

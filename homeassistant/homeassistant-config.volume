@@ -2,5 +2,4 @@
 Description=HomeAssistant config volume
 
 [Volume]
-# Without this line, Podman names the volume "systemd-homeassistant-config"
 VolumeName=homeassistant-config
