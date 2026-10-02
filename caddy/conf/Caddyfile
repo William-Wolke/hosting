@@ -97,4 +97,9 @@
 		crowdsec
 		reverse_proxy tasks-md:8080
 	}
+	@homeassistant host homeassistant.{$CADDY_DOMAIN}
+	route @homeassistant {
+		crowdsec
+		reverse_proxy 192.168.0.129:8124
+	}
 }
