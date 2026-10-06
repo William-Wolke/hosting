@@ -11,6 +11,10 @@ Environment=TZ=Europe/Stockholm
 PublishPort=8124:8123
 LogDriver=journald
 Volume=homeassistant-config.volume:/config
+Volume=/run/dbus:/run/dbus:ro
+AddCapability=CAP_NET_ADMIN CAP_NET_RAW
+# Needs access to the host's D-Bus socket for systemd integration, and access to the network stack for mDNS discovery.
+PodmanArgs=--security-opt=apparmor=unconfined
 
 [Service]
 Restart=on-failure
