@@ -28,8 +28,7 @@ DOCKER := docker --context envy
         check-volumes inspect-volumes backup-volumes migrate-volumes \
         mealie searxng caddy caddy-build caddy-reload redbot vaultwarden wg-easy \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
-        tasks crafty uptime uptime-kuma tech authentik homeassistant
-
+        tasks crafty uptime uptime-kuma tech coredns authentik homeassistant
 # =============================================================================
 # Help
 # =============================================================================
@@ -344,4 +343,21 @@ homeassistant:
 		sudo systemctl daemon-reload && \
 		sudo systemctl restart homeassistant.service && \
 		sudo systemctl status homeassistant.service --no-pager \
+	'
+coredns:
+	scp ./coredns/podman-dns.network \
+		./coredns/coredns.container \
+		./coredns/Corefile \
+		./coredns/zones/wolke-lab.duckdns.org.zone \
+		william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo install -Dm644 /tmp/podman-dns.network /etc/containers/systemd/podman-dns.network && \
+		sudo install -Dm644 /tmp/coredns.container /etc/containers/systemd/coredns.container && \
+		sudo install -Dm644 /tmp/Corefile /etc/coredns/Corefile && \
+		sudo install -Dm644 /tmp/wolke-lab.duckdns.org.zone /etc/coredns/zones/wolke-lab.duckdns.org.zone && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl start podman-dns-network.service && \
+		sudo systemctl restart coredns.service && \
+		sudo podman network inspect podman-dns && \
+		sudo systemctl status coredns.service --no-pager \
 	'

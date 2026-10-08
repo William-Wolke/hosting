@@ -1,0 +1,29 @@
+_acme-challenge.wolke-lab.duckdns.org:53 {
+    errors
+    cache 60
+    forward . tls://9.9.9.9:853 tls://149.112.112.112:853 {
+        tls_servername dns.quad9.net
+        health_check 5s
+    }
+}
+
+wolke-lab.duckdns.org:53 {
+    errors
+    file /etc/coredns/zones/wolke-lab.duckdns.org.zone
+    reload 30s
+    log
+}
+
+.:53 {
+    errors
+    cache 300
+    reload
+    loop
+
+    forward . tls://9.9.9.9:853 tls://149.112.112.112:853 {
+        tls_servername dns.quad9.net
+        health_check 5s
+    }
+
+    log
+}

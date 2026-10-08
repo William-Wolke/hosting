@@ -1,0 +1,15 @@
+$ORIGIN wolke-lab.duckdns.org.
+$TTL 3600
+
+@ 900 IN SOA dns-server.wolke-lab.duckdns.org. hostadmin.wolke-lab.duckdns.org. (
+    2026100801 ; Serial
+    900        ; Refresh
+    300        ; Retry
+    604800     ; Expire
+    900        ; Negative-cache TTL
+)
+
+@          IN NS dns-server.wolke-lab.duckdns.org.
+@          IN A  192.168.0.129
+*          IN A  192.168.0.129
+dns-server IN A  192.168.0.129
