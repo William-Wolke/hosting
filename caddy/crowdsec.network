@@ -1,0 +1,6 @@
+[Unit]
+Description=Shared Podman network for Caddy and CrowdSec
+
+[Network]
+NetworkName=crowdsec
+Driver=bridge

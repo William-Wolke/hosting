@@ -1,0 +1,5 @@
+[Unit]
+Description=CrowdSec database volume
+
+[Volume]
+VolumeName=crowdsec-db

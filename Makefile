@@ -26,7 +26,7 @@ DOCKER := docker --context envy
 .PHONY: help swarm-init swarm-status create-networks stop-compose recreate-networks \
         check-secrets create-secrets create-configs update-configs \
         check-volumes inspect-volumes backup-volumes migrate-volumes \
-        mealie searxng caddy caddy-build caddy-reload redbot vaultwarden wg-easy \
+        mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden wg-easy \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
         tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
 	podman-volume-backup-install
@@ -59,9 +59,10 @@ help:
 	@echo "Service Deployment:"
 	@echo "  mealie           Recipe manager"
 	@echo "  searxng          Privacy-respecting metasearch engine"
-	@echo "  caddy            Reverse proxy (uses existing image)"
-	@echo "  caddy-build      Build caddy image and deploy"
-	@echo "  caddy-reload     Reload caddy config without restart"
+	@echo "  caddy            Deploy Quadlet units for caddy + crowdsec"
+	@echo "  caddy-build      Build caddy image on remote host, then deploy"
+	@echo "  caddy-reload     Reload caddy config without full restart"
+	@echo "  caddy-env        Upload remotes .env file for caddy"
 	@echo "  redbot           Discord bot"
 	@echo "  vaultwarden      Password manager"
 	@echo "  wg-easy          WireGuard VPN management UI"
@@ -194,25 +195,76 @@ migrate-volumes:
 
 # Reverse proxy - requires caddy-custom:latest image to be built first
 caddy:
-	$(DOCKER) stack rm caddy || true
-	$(DOCKER) stack deploy -c ./caddy/compose.yml caddy
+	scp ./caddy/caddy.container ./caddy/crowdsec.container \
+		./caddy/caddy-data.volume ./caddy/caddy-config.volume ./caddy/caddy-logs.volume \
+		./caddy/crowdsec-db.volume ./caddy/crowdsec.network \
+		./caddy/conf/Caddyfile ./caddy/crowdsec/acquis.yaml \
+		william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo mkdir -p /etc/caddy /etc/crowdsec /etc/containers/systemd && \
+		sudo install -Dm644 /tmp/caddy.container /etc/containers/systemd/caddy.container && \
+		sudo install -Dm644 /tmp/crowdsec.container /etc/containers/systemd/crowdsec.container && \
+		sudo install -Dm644 /tmp/caddy-data.volume /etc/containers/systemd/caddy-data.volume && \
+		sudo install -Dm644 /tmp/caddy-config.volume /etc/containers/systemd/caddy-config.volume && \
+		sudo install -Dm644 /tmp/caddy-logs.volume /etc/containers/systemd/caddy-logs.volume && \
+		sudo install -Dm644 /tmp/crowdsec-db.volume /etc/containers/systemd/crowdsec-db.volume && \
+	sudo install -Dm644 /tmp/crowdsec.network /etc/containers/systemd/crowdsec.network && \
+		sudo install -Dm644 /tmp/Caddyfile /etc/caddy/Caddyfile && \
+		sudo install -Dm644 /tmp/acquis.yaml /etc/crowdsec/acquis.yaml && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart crowdsec.service && \
+		sudo systemctl restart caddy.service && \
+		sudo systemctl status crowdsec.service --no-pager && \
+		sudo systemctl status caddy.service --no-pager \
+	'
 
-# Build custom caddy image with plugins, then deploy
+# Build custom caddy image on the remote host, then deploy Quadlet units
 caddy-build:
-	$(DOCKER) build -t caddy-custom:latest ./caddy
-	$(DOCKER) stack rm caddy || true
-	$(DOCKER) stack deploy -c ./caddy/compose.yml caddy
+	scp ./caddy/Dockerfile ./caddy/entrypoint.sh william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		rm -rf /tmp/caddy-build && \
+		mkdir -p /tmp/caddy-build && \
+		mv /tmp/Dockerfile /tmp/caddy-build/Dockerfile && \
+		mv /tmp/entrypoint.sh /tmp/caddy-build/entrypoint.sh && \
+		sudo podman build -t localhost/caddy-custom:latest /tmp/caddy-build \
+	'
+	@$(MAKE) caddy
 
-# Reload caddy configuration without full restart
+caddy-env:
+	@test -s ./caddy/.caddy.env || { echo "Missing or empty caddy/.caddy.env"; exit 1; }
+	@chmod 600 ./caddy/.caddy.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.caddy-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./caddy/.caddy.env "$$host:$$stage/.caddy.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/caddy && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.caddy.env' /etc/caddy/.caddy.env"
+	@echo "Environment uploaded. Run make caddy to recreate the container with the new values."
+
+crowdsec-env:
+	@test -s ./caddy/.crowdsec.env || { echo "Missing or empty caddy/.crowdsec.env"; exit 1; }
+	@chmod 600 ./caddy/.crowdsec.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.crowdsec-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./caddy/.crowdsec.env "$$host:$$stage/.crowdsec.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/crowdsec && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.crowdsec.env' /etc/crowdsec/.crowdsec.env"
+	@echo "Uploaded /etc/crowdsec/.crowdsec.env"
+	@echo "Run 'make caddy' to recreate the container with the new values."
+
+# Reload Caddy configuration using the container's existing environment
 caddy-reload:
-	$(DOCKER) exec $$($(DOCKER) ps -q -f name=caddy_caddy) sh -c '\
-		export CADDY_DOMAIN=$$(cat /run/secrets/caddy_domain) \
-		       CADDY_EMAIL=$$(cat /run/secrets/caddy_email) \
-		       CADDY_DDNS_TOKEN=$$(cat /run/secrets/caddy_ddns_token) \
-		       CROWDSEC_API_KEY=$$(cat /run/secrets/crowdsec_api_key); \
-		caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile'
+	scp ./caddy/conf/Caddyfile william@192.168.0.129:/tmp/Caddyfile
+	ssh -t william@192.168.0.129 '\
+		sudo install -Dm644 /tmp/Caddyfile /etc/caddy/Caddyfile && \
+		sudo podman exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+	'# Identity provider / SSO
 
-# Identity provider / SSO
 authentik:
 	$(DOCKER) stack rm authentik || true
 	$(DOCKER) stack deploy -c ./authentik/compose.yml authentik
@@ -345,6 +397,7 @@ homeassistant:
 		sudo systemctl restart homeassistant.service && \
 		sudo systemctl status homeassistant.service --no-pager \
 	'
+
 coredns:
 	scp ./coredns/podman-dns.network \
 		./coredns/coredns.container \

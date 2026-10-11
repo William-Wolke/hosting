@@ -1,0 +1,31 @@
+[Unit]
+Description=CrowdSec container for Caddy
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=crowdsec
+HostName=crowdsec
+Image=docker.io/crowdsecurity/crowdsec:v1.7.4
+NoNewPrivileges=true
+LogDriver=journald
+
+Environment=GID=1000
+Environment="COLLECTIONS=crowdsecurity/caddy crowdsecurity/http-cve crowdsecurity/whitelist-good-actors"
+EnvironmentFile=/etc/crowdsec/.crowdsec.env
+
+Volume=crowdsec-db.volume:/var/lib/crowdsec/data
+Volume=caddy-logs.volume:/var/log/caddy:ro,z
+Volume=/etc/crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro,Z
+
+Network=crowdsec.network
+PodmanArgs=--network-alias=crowdsec
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
