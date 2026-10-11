@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Podman volume backup every night
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=podman-volume-backup.service
+
+[Install]
+WantedBy=timers.target

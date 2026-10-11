@@ -1,0 +1,26 @@
+[Unit]
+Description=Nightly Podman volume backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/backup-volumes.sh
+User=root
+Group=root
+
+# Lower priority so backups are less disruptive
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# Hardening
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+# Optional: send stdout/stderr to journald
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

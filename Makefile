@@ -28,7 +28,8 @@ DOCKER := docker --context envy
         check-volumes inspect-volumes backup-volumes migrate-volumes \
         mealie searxng caddy caddy-build caddy-reload redbot vaultwarden wg-easy \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
-        tasks crafty uptime uptime-kuma tech coredns authentik homeassistant
+        tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
+	podman-volume-backup-install
 # =============================================================================
 # Help
 # =============================================================================
