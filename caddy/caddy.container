@@ -26,6 +26,7 @@ Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
 Volume=/home/william/kubbe-web:/var/www/kubbe-web:ro,Z
 
 Network=crowdsec.network
+Network=proxy-net.network
 
 [Service]
 Restart=always

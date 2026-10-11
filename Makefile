@@ -197,7 +197,7 @@ migrate-volumes:
 caddy:
 	scp ./caddy/caddy.container ./caddy/crowdsec.container \
 		./caddy/caddy-data.volume ./caddy/caddy-config.volume ./caddy/caddy-logs.volume \
-		./caddy/crowdsec-db.volume ./caddy/crowdsec.network \
+		./caddy/proxy-net.network ./caddy/crowdsec-db.volume ./caddy/crowdsec.network \
 		./caddy/conf/Caddyfile ./caddy/crowdsec/acquis.yaml \
 		william@192.168.0.129:/tmp/
 	ssh -t william@192.168.0.129 '\
@@ -209,6 +209,7 @@ caddy:
 		sudo install -Dm644 /tmp/caddy-logs.volume /etc/containers/systemd/caddy-logs.volume && \
 		sudo install -Dm644 /tmp/crowdsec-db.volume /etc/containers/systemd/crowdsec-db.volume && \
 	sudo install -Dm644 /tmp/crowdsec.network /etc/containers/systemd/crowdsec.network && \
+	sudo install -Dm644 /tmp/proxy-net.network /etc/containers/systemd/proxy-net.network && \
 		sudo install -Dm644 /tmp/Caddyfile /etc/caddy/Caddyfile && \
 		sudo install -Dm644 /tmp/acquis.yaml /etc/crowdsec/acquis.yaml && \
 		sudo systemctl daemon-reload && \

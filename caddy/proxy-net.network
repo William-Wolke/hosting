@@ -1,0 +1,6 @@
+[Unit]
+Description=Podman network for Caddy and proxied applications
+
+[Network]
+NetworkName=proxy-net
+Driver=bridge
