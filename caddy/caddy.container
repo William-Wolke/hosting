@@ -2,8 +2,10 @@
 Description=Caddy reverse proxy container
 Documentation=https://caddyserver.com/
 After=network-online.target crowdsec.service
+After=proxy-net-network.service
 Wants=network-online.target
 Requires=crowdsec.service
+Requires=proxy-net-network.service
 
 [Container]
 ContainerName=caddy
@@ -26,7 +28,8 @@ Volume=/etc/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
 Volume=/home/william/kubbe-web:/var/www/kubbe-web:ro,Z
 
 Network=crowdsec.network
-Network=proxy-net.network
+# Connect to proxy-net with set ip
+PodmanArgs=--network=proxy-net:ip=10.89.2.10,alias=caddy
 
 [Service]
 Restart=always
