@@ -1,0 +1,6 @@
+[Unit]
+Description=Immich internal network
+
+[Network]
+NetworkName=immich
+Internal=false

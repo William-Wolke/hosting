@@ -1,0 +1,20 @@
+[Unit]
+Description=Immich Valkey
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=immich-valkey
+Image=docker.io/valkey/valkey:9@sha256:c123e3715db63d06d4ad6964884037aa0d5d4d703939b9929954112889708e1d
+Network=immich.network
+HealthCmd=valkey-cli ping | grep -q PONG || exit 1
+HealthInterval=30s
+LogDriver=journald
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

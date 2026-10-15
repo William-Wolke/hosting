@@ -29,7 +29,7 @@ DOCKER := docker --context envy
         mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden wg-easy \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
         tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
-	podman-volume-backup-install
+	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info
 # =============================================================================
 # Help
 # =============================================================================
@@ -70,10 +70,14 @@ help:
 	@echo "  duckdns          Dynamic DNS updater"
 	@echo "  copyparty        File sharing"
 	@echo "  uptime-kuma      Uptime monitoring"
-	@echo "  tech             Technitium DNS server"
 	@echo "  tasks            Task management"
 	@echo "  crafty           Minecraft server manager"
 	@echo "  authentik        Identity provider / SSO"
+	@echo "  immich           Deploy Quadlet units for immich (server, ML, postgres, valkey)"
+	@echo "  immich-env       Upload immich/.immich.env to /etc/immich/.immich.env"
+	@echo "  immich-pull      Pre-pull immich images"
+	@echo "  immich-status    Show status of all immich units"
+	@echo "  immich-gpu-info  Show AMD GPU devices + gfx target for HSA_OVERRIDE_GFX_VERSION"
 	@echo ""
 	@echo "Note: gluetun-qb uses docker-compose instead of swarm due to"
 	@echo "      network_mode:container dependency (not supported in swarm)"
@@ -416,3 +420,82 @@ coredns:
 		sudo podman network inspect podman-dns && \
 		sudo systemctl status coredns.service --no-pager \
 	'
+
+# =============================================================================
+# Immich (Podman Quadlet)
+# =============================================================================
+
+IMMICH_UNITS := immich.network immich-postgres.volume immich-model-cache.volume \
+	immich-valkey.container immich-postgres.container \
+	immich-machine-learning.container immich-server.container
+IMMICH_SERVICES := immich-valkey.service immich-postgres.service \
+	immich-machine-learning.service immich-server.service
+
+immich:
+	scp $(addprefix ./immich/,$(IMMICH_UNITS)) william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/immich/.immich.env || { echo "Missing /etc/immich/.immich.env - run make immich-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd /mnt/storage-box-1/immich && \
+		for f in $(IMMICH_UNITS); do sudo install -Dm644 /tmp/$$f /etc/containers/systemd/$$f && rm -f /tmp/$$f; done && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart immich-network.service && \
+		sudo systemctl restart immich-valkey.service immich-postgres.service && \
+		sudo systemctl restart immich-machine-learning.service immich-server.service && \
+		sudo systemctl status $(IMMICH_SERVICES) --no-pager \
+	'
+
+immich-env:
+	@test -s ./immich/.immich.env || { echo "Missing or empty immich/.immich.env (see .immich.env.example)"; exit 1; }
+	@chmod 600 ./immich/.immich.env
+	@. ./immich/.immich.env; \
+		[ -n "$$DB_PASSWORD" ] && [ "$$DB_PASSWORD" = "$$POSTGRES_PASSWORD" ] || \
+		{ echo "DB_PASSWORD and POSTGRES_PASSWORD must be set and identical"; exit 1; }
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.immich-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./immich/.immich.env "$$host:$$stage/.immich.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/immich && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.immich.env' /etc/immich/.immich.env"
+	@echo "Uploaded /etc/immich/.immich.env"
+	@echo "Run 'make immich' to recreate the containers with the new values."
+
+immich-pull:
+	ssh -t william@192.168.0.129 '\
+		for f in $(filter %.container,$(IMMICH_UNITS)); do \
+			img=$$(grep -m1 "^Image=" /etc/containers/systemd/$$f | cut -d= -f2-); \
+			echo "Pulling $$img"; sudo podman pull "$$img"; \
+		done \
+	'
+
+immich-status:
+	ssh -t william@192.168.0.129 'sudo systemctl status $(IMMICH_SERVICES) --no-pager; sudo podman ps --filter name=immich'
+
+immich-gpu-info:
+	ssh -t william@192.168.0.129 '\
+		ls -l /dev/dri /dev/kfd; \
+		echo "gfx_target_version (e.g. 110003 = gfx1103):"; \
+		grep -h gfx_target_version /sys/class/kfd/kfd/topology/nodes/*/properties | grep -v " 0$$"; \
+		sudo podman exec immich-server ls -l /dev/dri 2>/dev/null || true \
+	'
+
+# Keep backups location updated with script
+podman-volume-backup-install:
+	@echo "Installing nightly Podman volume backup..."
+	scp ./scripts/backup-podman-volumes.sh \
+		./backups/podman-volume-backup.service \
+		./backups/podman-volume-backup.timer \
+		william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo install -Dm755 /tmp/backup-podman-volumes.sh /usr/local/sbin/backup-podman-volumes.sh && \
+		sudo install -Dm644 /tmp/podman-volume-backup.service /etc/systemd/system/podman-volume-backup.service && \
+		sudo install -Dm644 /tmp/podman-volume-backup.timer /etc/systemd/system/podman-volume-backup.timer && \
+		sudo install -d -m700 /backups/podman-volumes && \
+		sudo podman info >/dev/null && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl enable --now podman-volume-backup.timer && \
+		sudo systemctl restart podman-volume-backup.timer && \
+		sudo systemctl status podman-volume-backup.timer --no-pager \
+	'
+

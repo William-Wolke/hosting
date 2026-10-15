@@ -1,0 +1,24 @@
+[Unit]
+Description=Immich Machine Learning
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=immich-machine-learning
+Image=ghcr.io/immich-app/immich-machine-learning:v3.3.3
+AutoUpdate=registry
+Network=immich.network
+Volume=immich-model-cache.volume:/cache
+Environment=TZ=Europe/Stockholm
+
+Environment=HSA_OVERRIDE_GFX_VERSION=11.0.0
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+# The image is large; first pull can take a while
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target

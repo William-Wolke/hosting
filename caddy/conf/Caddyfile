@@ -102,4 +102,9 @@
 		crowdsec
 		reverse_proxy homeassistant:8123
 	}
+	@immich host immich.{$CADDY_DOMAIN}
+	route @immich {
+		crowdsec
+		reverse_proxy immich-server:2283
+	}
 }

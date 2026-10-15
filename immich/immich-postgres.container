@@ -1,0 +1,28 @@
+[Unit]
+Description=Immich Postgres (VectorChord)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=immich-postgres
+# Pinned exactly as in the upstream compose file - do NOT auto-update the DB
+Image=ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+Network=immich.network
+Volume=immich-postgres.volume:/var/lib/postgresql/data
+Environment=POSTGRES_USER=postgres
+Environment=POSTGRES_DB=immich
+Environment=POSTGRES_INITDB_ARGS=--data-checksums
+# Uncomment if the volume lives on spinning disks
+# Environment=DB_STORAGE_TYPE=HDD
+# Set POSTGRES_PASSWORD
+EnvironmentFile=/etc/immich/.immich.env
+PodmanArgs=--shm-size=128m
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
