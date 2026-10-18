@@ -3,12 +3,12 @@
 # Backs up the database using SQLite backup API and copies essential files
 #
 # Usage: ./backup.sh [backup_dir]
-# Default backup directory: /var/backups/vaultwarden
+# Default backup directory: /mnt/storage-box-1/backups/vaultwarden
 
 set -euo pipefail
 
 # Configuration
-BACKUP_DIR="${1:-/var/backups/vaultwarden}"
+BACKUP_DIR="${1:-/mnt/storage-box-1/backups/vaultwarden}"
 DOCKER_CONTEXT="${DOCKER_CONTEXT:-local}"
 CONTAINER_NAME="vaultwarden_vaultwarden"
 DOCKER_CMD="docker"

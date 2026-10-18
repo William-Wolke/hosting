@@ -28,7 +28,7 @@ if [ $# -lt 1 ]; then
     error "Usage: $0 <backup_archive.tar.gz>"
     echo ""
     echo "Available backups:"
-    ls -lht /var/backups/vaultwarden/vaultwarden-backup-*.tar.gz 2>/dev/null | head -10 || echo "No backups found in /var/backups/vaultwarden/"
+    ls -lht /mnt/storage-box-1/backups/vaultwarden/vaultwarden-backup-*.tar.gz 2>/dev/null | head -10 || echo "No backups found in /var/backups/vaultwarden/"
     exit 1
 fi
 
