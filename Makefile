@@ -369,7 +369,7 @@ vaultwarden-backup-install:
 	scp ./vaultwarden/scripts/restore.sh william@192.168.0.129:/tmp/
 	scp ./vaultwarden/scripts/vaultwarden-backup.service william@192.168.0.129:/tmp/
 	scp ./vaultwarden/scripts/vaultwarden-backup.timer william@192.168.0.129:/tmp/
-	ssh -t william@192.168.0.129 "sudo mkdir -p /opt/vaultwarden-backup /var/backups/vaultwarden && \
+	ssh -t william@192.168.0.129 "sudo mkdir -p /opt/vaultwarden-backup /mnt/storage-box-1/backups/vaultwarden && \
 		sudo mv /tmp/backup.sh /tmp/restore.sh /opt/vaultwarden-backup/ && \
 		sudo chmod +x /opt/vaultwarden-backup/*.sh && \
 		sudo mv /tmp/vaultwarden-backup.service /tmp/vaultwarden-backup.timer /etc/systemd/system/ && \
@@ -381,16 +381,16 @@ vaultwarden-backup-install:
 
 # Run vaultwarden backup manually
 vaultwarden-backup:
-	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/backup.sh /var/backups/vaultwarden"
+	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/backup.sh /mnt/storage-box-1/backups/vaultwarden"
 
 # List vaultwarden backups
 vaultwarden-backup-list:
-	ssh william@192.168.0.129 "ls -lht /var/backups/vaultwarden/*.tar.gz 2>/dev/null | head -10 || echo 'No backups found'"
+	ssh william@192.168.0.129 "ls -lht /mnt/storage-box-1/backups/vaultwarden/*.tar.gz 2>/dev/null | head -10 || echo 'No backups found'"
 
 # Restore vaultwarden from backup (usage: make vaultwarden-restore BACKUP=filename.tar.gz)
 vaultwarden-restore:
 	@if [ -z "$(BACKUP)" ]; then echo "Usage: make vaultwarden-restore BACKUP=vaultwarden-backup-YYYYMMDD-HHMMSS.tar.gz"; exit 1; fi
-	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/restore.sh /var/backups/vaultwarden/$(BACKUP)"
+	ssh william@192.168.0.129 "DOCKER_CONTEXT=local /opt/vaultwarden-backup/restore.sh /mnt/storage-box-1/backups/vaultwarden/$(BACKUP)"
 
 homeassistant:
 	scp ./homeassistant/homeassistant.container ./homeassistant/homeassistant-config.volume \
@@ -498,4 +498,3 @@ podman-volume-backup-install:
 		sudo systemctl restart podman-volume-backup.timer && \
 		sudo systemctl status podman-volume-backup.timer --no-pager \
 	'
-
