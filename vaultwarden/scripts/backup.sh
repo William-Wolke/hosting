@@ -15,6 +15,8 @@ DOCKER_CMD="docker"
 if [ "${DOCKER_CONTEXT}" != "local" ]; then
     DOCKER_CMD="docker --context ${DOCKER_CONTEXT}"
 fi
+# Docker reads DOCKER_CONTEXT itself; "local" is only meaningful to this script
+unset DOCKER_CONTEXT
 RETENTION_DAYS=30
 DATE=$(date '+%Y%m%d-%H%M%S')
 BACKUP_SUBDIR="${BACKUP_DIR}/${DATE}"
@@ -34,10 +36,11 @@ log "Creating backup directory: ${BACKUP_SUBDIR}"
 mkdir -p "${BACKUP_SUBDIR}"
 
 # Get container ID (Swarm containers have suffix like .1.xxxxx)
-CONTAINER_ID=$(${DOCKER_CMD} ps -q -f "name=${CONTAINER_NAME}" 2>/dev/null | head -1)
+CONTAINER_ID=$(${DOCKER_CMD} ps -q -f "name=${CONTAINER_NAME}" | head -1)
 if [ -z "${CONTAINER_ID}" ]; then
     # Try with wildcard pattern for Swarm naming
-    CONTAINER_ID=$(${DOCKER_CMD} ps --format '{{.ID}}' --filter "name=${CONTAINER_NAME}." 2>/dev/null | head -1)
+    log "Container not found with exact name, trying wildcard search..."
+    CONTAINER_ID=$(${DOCKER_CMD} ps --format '{{.ID}}' --filter "name=${CONTAINER_NAME}." | head -1)
 fi
 
 if [ -z "${CONTAINER_ID}" ]; then
