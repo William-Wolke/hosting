@@ -1,0 +1,26 @@
+[Unit]
+Description=DuckDNS dynamic DNS updater
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/etc/duckdns
+
+[Container]
+ContainerName=duckdns
+Image=lscr.io/linuxserver/duckdns:version-72c8259f
+
+Network=host
+
+Environment=TZ=CET
+Environment=UPDATE_IP=ipv4
+Environment=LOG_FILE=false
+EnvironmentFile=/etc/duckdns/.duckdns.env
+
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

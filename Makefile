@@ -27,11 +27,12 @@ DOCKER := docker --context envy
         check-secrets create-secrets create-configs update-configs \
         check-volumes inspect-volumes backup-volumes migrate-volumes \
         mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden \
-        gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
+        gluetun-qb gluetun-qb-up gluetun-qb-down copyparty technitium \
         tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
 	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info \
 	mealie mealie-env mealie-migrate mealie-status \
-        wg-easy wg-easy-env wg-easy-status
+	wg-easy wg-easy-env wg-easy-status \
+	duckdns duckdns-env duckdns-status
 # =============================================================================
 # Help
 # =============================================================================
@@ -291,11 +292,6 @@ authentik:
 tech:
 	$(DOCKER) stack rm technitium || true
 	$(DOCKER) stack deploy -c ./technitium/compose.yml technitium
-
-# Dynamic DNS updater
-duckdns:
-	$(DOCKER) stack rm duckdns || true
-	$(DOCKER) stack deploy -c ./duckdns/compose.yml duckdns
 
 # =============================================================================
 # Services - Applications
@@ -564,4 +560,38 @@ wg-easy-status:
 	ssh -t william@192.168.0.129 '\
 		sudo systemctl status wg-easy.service --no-pager && \
 		sudo podman ps --filter name=wg-easy \
+	'
+
+# Dynamic DNS updater
+# Dynamic DNS updater (Podman Quadlet)
+duckdns:
+	scp ./duckdns/duckdns.container william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/duckdns/.duckdns.env || { echo "Missing /etc/duckdns/.duckdns.env - run make duckdns-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd && \
+		sudo install -Dm644 /tmp/duckdns.container /etc/containers/systemd/duckdns.container && \
+		rm -f /tmp/duckdns.container && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart duckdns.service && \
+		sudo systemctl status duckdns.service --no-pager \
+	'
+
+duckdns-env:
+	@test -s ./duckdns/.duckdns.env || { echo "Missing or empty duckdns/.duckdns.env (see duckdns/duckdns.env.example)"; exit 1; }
+	@chmod 600 ./duckdns/.duckdns.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.duckdns-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./duckdns/.duckdns.env "$$host:$$stage/.duckdns.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/duckdns && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.duckdns.env' /etc/duckdns/.duckdns.env"
+	@echo "Uploaded /etc/duckdns/.duckdns.env"
+	@echo "Run 'make duckdns' to recreate the container with the new values."
+
+duckdns-status:
+	ssh -t william@192.168.0.129 '\
+		sudo systemctl status duckdns.service --no-pager && \
+		sudo podman ps --filter name=duckdns \
 	'
