@@ -14,7 +14,7 @@
 
 set -e
 
-DOCKER="docker --context local"
+DOCKER="docker --context envy"
 
 # Define volume mappings: "new_name:old_name"
 # Only services using Docker volumes (not bind mounts) are listed here
