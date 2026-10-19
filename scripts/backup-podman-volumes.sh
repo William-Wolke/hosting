@@ -12,6 +12,8 @@ SERVICES=(
     immich-machine-learning.service
     immich-postgres.service
     immich-valkey.service
+    mealie.service
+    wg-easy.service
 )
 # Keep location updated with makefile
 BACKUP_ROOT="/mnt/storage-box-1/backups/podman-volumes"
