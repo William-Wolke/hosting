@@ -470,12 +470,14 @@ immich-gpu-info:
 		sudo podman exec immich-server ls -l /dev/dri 2>/dev/null || true \
 	'
 
+FILTER ?= unsupported|error|failed
+
 podman-troubleshoot:
 	ssh -t william@192.168.0.129 '\
-	sudo /usr/lib/systemd/system-generators/podman-system-generator --dryrun 2>&1 \
-	| grep -Ei -C 5 'wg-easy|unsupported|error|failed' \
+		podman --version; \
+		sudo /usr/lib/systemd/system-generators/podman-system-generator --dryrun 2>&1 \
+		| grep -Ei -C 5 "$(FILTER)" \
 	'
-
 # Keep backups location updated with script
 podman-volume-backup-install:
 	@echo "Installing nightly Podman volume backup..."
