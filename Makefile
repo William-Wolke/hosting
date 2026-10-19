@@ -28,7 +28,7 @@ DOCKER := docker --context envy
         check-volumes inspect-volumes backup-volumes migrate-volumes \
         mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden \
         gluetun-qb gluetun-qb-up gluetun-qb-down copyparty technitium \
-        tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
+        tasks crafty tech coredns authentik homeassistant \
 	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info \
 	mealie mealie-env mealie-migrate mealie-status \
 	wg-easy wg-easy-env wg-easy-status \
@@ -72,7 +72,9 @@ help:
 	@echo "  gluetun-qb       VPN + qBittorrent + Prowlarr (docker-compose, not swarm)"
 	@echo "  duckdns          Dynamic DNS updater"
 	@echo "  copyparty        File sharing"
-	@echo "  uptime-kuma      Uptime monitoring"
+	@echo "  uptime-kuma      Deploy Uptime Kuma Quadlet units"
+	@echo "  uptime-kuma-env  Upload uptime-kuma/.uptime-kuma.env"
+	@echo "  uptime-kuma-status Show Uptime Kuma service status"
 	@echo "  tasks            Task management"
 	@echo "  crafty           Minecraft server manager"
 	@echo "  authentik        Identity provider / SSO"
@@ -321,13 +323,6 @@ redbot-playlist-sync-install:
 copyparty:
 	$(DOCKER) stack rm copyparty || true
 	$(DOCKER) stack deploy -c ./copyparty/compose.yml copyparty
-
-# Uptime monitoring
-uptime-kuma:
-	$(DOCKER) stack rm uptime-kuma || true
-	$(DOCKER) stack deploy -c ./uptime-kuma/compose.yml uptime-kuma
-
-uptime: uptime-kuma
 
 # Task management
 tasks:
@@ -594,4 +589,47 @@ duckdns-status:
 	ssh -t william@192.168.0.129 '\
 		sudo systemctl status duckdns.service --no-pager && \
 		sudo podman ps --filter name=duckdns \
+	'
+
+# Uptime Kuma
+
+UPTIME_KUMA_UNITS := uptime-kuma.container uptime-kuma-data.volume
+
+.PHONY: uptime uptime-kuma uptime-kuma-env uptime-kuma-status
+
+uptime: uptime-kuma
+
+uptime-kuma:
+	scp $(addprefix ./uptime-kuma/,$(UPTIME_KUMA_UNITS)) \
+		./caddy/proxy-net.network william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/uptime-kuma/.uptime-kuma.env || { echo "Missing /etc/uptime-kuma/.uptime-kuma.env - run make uptime-kuma-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd && \
+		sudo install -Dm644 /tmp/proxy-net.network /etc/containers/systemd/proxy-net.network && \
+		sudo install -Dm644 /tmp/uptime-kuma.container /etc/containers/systemd/uptime-kuma.container && \
+		sudo install -Dm644 /tmp/uptime-kuma-data.volume /etc/containers/systemd/uptime-kuma-data.volume && \
+		rm -f /tmp/proxy-net.network /tmp/uptime-kuma.container /tmp/uptime-kuma-data.volume && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart uptime-kuma.service && \
+		sudo systemctl status uptime-kuma.service --no-pager \
+	'
+
+uptime-kuma-env:
+	@test -s ./uptime-kuma/.uptime-kuma.env || { echo "Missing or empty uptime-kuma/.uptime-kuma.env (see uptime-kuma/uptime-kuma.env.example)"; exit 1; }
+	@chmod 600 ./uptime-kuma/.uptime-kuma.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.uptime-kuma-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./uptime-kuma/.uptime-kuma.env "$$host:$$stage/.uptime-kuma.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/uptime-kuma && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.uptime-kuma.env' /etc/uptime-kuma/.uptime-kuma.env"
+	@echo "Uploaded /etc/uptime-kuma/.uptime-kuma.env"
+	@echo "Run 'make uptime-kuma' to recreate the container with the new values."
+
+uptime-kuma-status:
+	ssh -t william@192.168.0.129 '\
+		sudo systemctl status uptime-kuma.service --no-pager && \
+		sudo podman ps --filter name=uptime-kuma \
 	'
