@@ -30,6 +30,7 @@ DOCKER := docker --context envy
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
         tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
 	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info
+	mealie mealie-env mealie-migrate mealie-status
 # =============================================================================
 # Help
 # =============================================================================
@@ -78,6 +79,10 @@ help:
 	@echo "  immich-pull      Pre-pull immich images"
 	@echo "  immich-status    Show status of all immich units"
 	@echo "  immich-gpu-info  Show AMD GPU devices + gfx target for HSA_OVERRIDE_GFX_VERSION"
+	@echo "  mealie           Deploy Quadlet units for mealie"
+	@echo "  mealie-env       Upload /etc/mealie/.mealie.env"
+	@echo "  mealie-migrate   Backup and migrate old Docker volume to Podman volume"
+	@echo "  mealie-status    Show Mealie service status"
 	@echo ""
 	@echo "Note: gluetun-qb uses docker-compose instead of swarm due to"
 	@echo "      network_mode:container dependency (not supported in swarm)"
@@ -297,11 +302,6 @@ duckdns:
 # Services - Applications
 # =============================================================================
 
-# Recipe manager
-mealie:
-	$(DOCKER) stack rm mealie || true
-	$(DOCKER) stack deploy -c ./mealie/compose.yml mealie
-
 # Privacy-respecting search engine
 searxng:
 	$(DOCKER) stack rm searxng || true
@@ -497,5 +497,33 @@ podman-volume-backup-install:
 		sudo systemctl enable --now podman-volume-backup.timer && \
 		sudo systemctl restart podman-volume-backup.timer && \
 		sudo systemctl status podman-volume-backup.timer --no-pager \
+	'
+MEALIE_UNITS := mealie.container mealie-data.volume
+
+mealie:
+	scp $(addprefix ./mealie/,$(MEALIE_UNITS)) william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/mealie/.mealie.env || { echo "Missing /etc/mealie/.mealie.env - run make mealie-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd && \
+		for f in $(MEALIE_UNITS); do sudo install -Dm644 /tmp/$$f /etc/containers/systemd/$$f && rm -f /tmp/$$f; done && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart proxy-net-network.service || true && \
+		sudo systemctl restart mealie.service && \
+		sudo systemctl status mealie.service --no-pager \
+	'
+
+mealie-env:
+	scp ./mealie/.mealie.env william@192.168.0.129:/tmp/.mealie.env 
+	ssh -t william@192.168.0.129 '\
+		sudo install -d -m 0755 /etc/mealie && \
+		sudo install -Dm600 /tmp/.mealie.env /etc/mealie/.mealie.env \
+	'
+
+mealie-migrate:
+	./mealie/scripts/migrate-volume.sh migrate
+
+mealie-status:
+	ssh -t william@192.168.0.129 '\
+		systemctl status mealie.service --no-pager \
 	'
 
