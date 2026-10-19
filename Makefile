@@ -491,10 +491,11 @@ podman-volume-backup-install:
 		sudo install -Dm755 /tmp/backup-podman-volumes.sh /usr/local/sbin/backup-podman-volumes.sh && \
 		sudo install -Dm644 /tmp/podman-volume-backup.service /etc/systemd/system/podman-volume-backup.service && \
 		sudo install -Dm644 /tmp/podman-volume-backup.timer /etc/systemd/system/podman-volume-backup.timer && \
-		sudo install -d -m700 /backups/podman-volumes && \
+		sudo install -d -m700 /mnt/storage-box-1/backups/podman-volumes && \
 		sudo podman info >/dev/null && \
 		sudo systemctl daemon-reload && \
 		sudo systemctl enable --now podman-volume-backup.timer && \
 		sudo systemctl restart podman-volume-backup.timer && \
 		sudo systemctl status podman-volume-backup.timer --no-pager \
 	'
+
