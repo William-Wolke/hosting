@@ -26,11 +26,12 @@ DOCKER := docker --context envy
 .PHONY: help swarm-init swarm-status create-networks stop-compose recreate-networks \
         check-secrets create-secrets create-configs update-configs \
         check-volumes inspect-volumes backup-volumes migrate-volumes \
-        mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden wg-easy \
+        mealie searxng caddy caddy-build caddy-reload caddy-env redbot vaultwarden \
         gluetun-qb gluetun-qb-up gluetun-qb-down duckdns copyparty technitium \
         tasks crafty uptime uptime-kuma tech coredns authentik homeassistant \
-	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info
-	mealie mealie-env mealie-migrate mealie-status
+	podman-volume-backup-install immich immich-env immich-pull immich-status immich-gpu-info \
+	mealie mealie-env mealie-migrate mealie-status \
+        wg-easy wg-easy-env wg-easy-status
 # =============================================================================
 # Help
 # =============================================================================
@@ -83,6 +84,9 @@ help:
 	@echo "  mealie-env       Upload /etc/mealie/.mealie.env"
 	@echo "  mealie-migrate   Backup and migrate old Docker volume to Podman volume"
 	@echo "  mealie-status    Show Mealie service status"
+	@echo "  wg-easy          Deploy Quadlet units for wg-easy"
+	@echo "  wg-easy-env      Upload wg-easy/.wg-easy.env to /etc/wg-easy/.wg-easy.env"
+	@echo "  wg-easy-status   Show wg-easy service status"
 	@echo ""
 	@echo "Note: gluetun-qb uses docker-compose instead of swarm due to"
 	@echo "      network_mode:container dependency (not supported in swarm)"
@@ -282,11 +286,6 @@ authentik:
 # =============================================================================
 # Services - Networking
 # =============================================================================
-
-# WireGuard VPN with web UI
-wg-easy:
-	$(DOCKER) stack rm wg-easy || true
-	$(DOCKER) stack deploy -c ./wg-easy/compose.yml wg-easy
 
 # DNS server (used by WireGuard clients)
 tech:
@@ -527,3 +526,36 @@ mealie-status:
 		systemctl status mealie.service --no-pager \
 	'
 
+wg-easy:
+	scp ./wg-easy/wg-easy.container ./wg-easy/wg-easy-data.volume \
+		./caddy/proxy-net.network william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/wg-easy/.wg-easy.env || { echo "Missing /etc/wg-easy/.wg-easy.env - run make wg-easy-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd /etc/wg-easy && \
+		sudo install -Dm644 /tmp/proxy-net.network /etc/containers/systemd/proxy-net.network && \
+		sudo install -Dm644 /tmp/wg-easy.container /etc/containers/systemd/wg-easy.container && \
+		sudo install -Dm644 /tmp/wg-easy-data.volume /etc/containers/systemd/wg-easy-data.volume && \
+		rm -f /tmp/wg-easy.container /tmp/wg-easy-data.volume /tmp/proxy-net.network && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart wg-easy.service && \
+		sudo systemctl status wg-easy.service --no-pager \
+	'
+wg-easy-env:
+	@test -s ./wg-easy/.wg-easy.env || { echo "Missing or empty wg-easy/.wg-easy.env (see wg-easy/wg-easy.env.example)"; exit 1; }
+	@chmod 600 ./wg-easy/.wg-easy.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.wg-easy-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./wg-easy/.wg-easy.env "$$host:$$stage/.wg-easy.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/wg-easy && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.wg-easy.env' /etc/wg-easy/.wg-easy.env"
+	@echo "Uploaded /etc/wg-easy/.wg-easy.env"
+	@echo "Run 'make wg-easy' to recreate the container with the new values."
+
+wg-easy-status:
+	ssh -t william@192.168.0.129 '\
+		sudo systemctl status wg-easy.service --no-pager && \
+		sudo podman ps --filter name=wg-easy \
+	'

@@ -34,7 +34,7 @@
 	@wg-easy host wg-easy.{$CADDY_DOMAIN}
 	route @wg-easy {
 		crowdsec
-		reverse_proxy 192.168.0.129:51821
+		reverse_proxy wg-easy:51821
 	}
 	@mealie host mealie.{$CADDY_DOMAIN}
 	route @mealie {
