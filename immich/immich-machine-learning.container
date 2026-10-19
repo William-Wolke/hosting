@@ -19,6 +19,7 @@ Restart=always
 RestartSec=5
 # The image is large; first pull can take a while
 TimeoutStartSec=1800
+SuccessExitStatus=0 143
 
 [Install]
 WantedBy=multi-user.target

@@ -41,6 +41,7 @@ LogDriver=journald
 Restart=always
 RestartSec=5
 TimeoutStartSec=900
+SuccessExitStatus=0 143
 
 [Install]
 WantedBy=multi-user.target

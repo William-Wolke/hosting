@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/backup-volumes.sh
+ExecStart=/usr/local/sbin/backup-podman-volumes.sh
 User=root
 Group=root
 

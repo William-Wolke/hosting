@@ -4,12 +4,17 @@ umask 077
 
 # Rootful Quadlet services. Include related application/database services.
 SERVICES=(
+    caddy.service
+    crowdsec.service
     homeassistant.service
     coredns.service
+    immich-server.service
+    immich-machine-learning.service
+    immich-postgres.service
+    immich-valkey.service
 )
-
 # Keep location updated with makefile
-BACKUP_ROOT="/backups/podman-volumes"
+BACKUP_ROOT="/mnt/storage-box-1/backups/podman-volumes"
 ACTIVE_SERVICES=()
 PARTIAL_FILE=""
 
@@ -110,8 +115,22 @@ if [[ -z "$volume_list" ]]; then
     exit 0
 fi
 
-mapfile -t VOLUMES <<<"$volume_list"
+# Filter out certain volumes
+VOLUMES=()
+while IFS= read -r volume; do
+    case "$volume" in
+        immich-model-cache)
+            log "Skipping excluded volume: $volume"
+            continue
+            ;;
+    esac
+    VOLUMES+=("$volume")
+done <<<"$volume_list"
 
+if (( ${#VOLUMES[@]} == 0 )); then
+    log "No volumes remain after exclusions."
+    exit 0
+fi
 # Validate all units before stopping anything.
 for unit in "${SERVICES[@]}"; do
     load_state=$(systemctl show "$unit" --property=LoadState --value)
