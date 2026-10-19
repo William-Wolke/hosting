@@ -20,7 +20,7 @@
 	tls {
 		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
-	@webroot host {$CADDY_DOMAIN} *.{$CADDY_DOMAIN}
+	@webroot host {$CADDY_DOMAIN} kubbe.{$CADDY_DOMAIN}
 	route @webroot {
 		crowdsec
 		root * /var/www/kubbe-web
@@ -70,7 +70,7 @@
 	@vaultwarden host vaultwarden.{$CADDY_DOMAIN}
 	route @vaultwarden {
 		crowdsec
-		reverse_proxy vaultwarden:80
+		reverse_proxy 192.168.0.129:8070
 	}
 	@authentik host authentik.{$CADDY_DOMAIN}
 	route @authentik {

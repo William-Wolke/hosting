@@ -5,6 +5,8 @@ networks:
 services:
   vaultwarden:
     image: vaultwarden/server:1.35.1
+    ports:
+      - 8070:80
     networks:
       proxy-net:
     secrets:
