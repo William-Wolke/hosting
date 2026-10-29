@@ -33,6 +33,7 @@ DOCKER := docker --context envy
 	mealie mealie-env mealie-migrate mealie-status \
 	wg-easy wg-easy-env wg-easy-status \
 	duckdns duckdns-env duckdns-status
+	
 # =============================================================================
 # Help
 # =============================================================================
@@ -90,6 +91,8 @@ help:
 	@echo "  wg-easy          Deploy Quadlet units for wg-easy"
 	@echo "  wg-easy-env      Upload wg-easy/.wg-easy.env to /etc/wg-easy/.wg-easy.env"
 	@echo "  wg-easy-status   Show wg-easy service status"
+	@echo "  music-assistant        Deploy Music Assistant Quadlet units"
+	@echo "  music-assistant-status Show Music Assistant service status"
 	@echo ""
 	@echo "Note: gluetun-qb uses docker-compose instead of swarm due to"
 	@echo "      network_mode:container dependency (not supported in swarm)"
@@ -634,4 +637,25 @@ uptime-kuma-status:
 	ssh -t william@192.168.0.129 '\
 		sudo systemctl status uptime-kuma.service --no-pager && \
 		sudo podman ps --filter name=uptime-kuma \
+	'
+
+.PHONY: music-assistant music-assistant-status
+
+music-assistant:
+	scp ./music-assistant/music-assistant.container \
+		./music-assistant/music-assistant-data.volume \
+		william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo install -Dm644 /tmp/music-assistant.container /etc/containers/systemd/music-assistant.container && \
+		sudo install -Dm644 /tmp/music-assistant-data.volume /etc/containers/systemd/music-assistant-data.volume && \
+		rm -f /tmp/music-assistant.container /tmp/music-assistant-data.volume && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart music-assistant.service && \
+		sudo systemctl status music-assistant.service --no-pager \
+	'
+
+music-assistant-status:
+	ssh -t william@192.168.0.129 '\
+		sudo systemctl status music-assistant.service --no-pager && \
+		sudo podman ps --filter name=music-assistant \
 	'

@@ -1,0 +1,5 @@
+[Unit]
+Description=Music Assistant data volume
+
+[Volume]
+VolumeName=music-assistant-data

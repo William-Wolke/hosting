@@ -107,4 +107,9 @@
 		crowdsec
 		reverse_proxy immich-server:2283
 	}
+	@music-assistant host music-assistant.{$CADDY_DOMAIN}
+	route @music-assistant {
+		crowdsec
+		reverse_proxy 192.168.0.129:8095
+	}
 }

@@ -1,0 +1,26 @@
+[Unit]
+Description=Music Assistant
+Documentation=https://www.music-assistant.io/
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=music-assistant
+Image=ghcr.io/music-assistant/server:2.10.8
+Network=host
+
+Volume=music-assistant-data.volume:/data
+Volume=/etc/localtime:/etc/localtime:ro
+
+Environment=TZ=Europe/Stockholm
+Environment=LOG_LEVEL=info
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
