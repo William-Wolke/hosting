@@ -4,7 +4,7 @@ Wants=network-online.target
 After=network-online.target
 
 [Container]
-Image=docker.io/coredns/coredns:1.11.3
+Image=docker.io/coredns/coredns:1.15.0
 ContainerName=coredns
 AutoUpdate=registry
 
