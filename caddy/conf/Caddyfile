@@ -4,9 +4,6 @@
 		api_url http://crowdsec:8080
 		api_key {$CROWDSEC_API_KEY}
 		ticker_interval 15s
-		#appsec_url {$APPSEC_URL}
-		#disable_streaming
-		#enable_hard_fails
 	}
 	log {
 		output file /var/log/caddy/access.log {
@@ -16,100 +13,154 @@
 		format json
 	}
 }
-*.{$CADDY_DOMAIN}, {$CADDY_DOMAIN} {
+
+(private_proxy) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 5
+		}
+		format json
+	}
+
+	@local remote_ip 192.168.0.0/24 10.8.0.0/24
+
+	handle @local {
+		route {
+			crowdsec
+			reverse_proxy {args[0]}
+		}
+	}
+
+	handle {
+		route {
+			crowdsec
+			respond "Forbidden" 403
+		}
+	}
+}
+
+# Public services
+{$CADDY_DOMAIN}, kubbe.{$CADDY_DOMAIN} {
 	tls {
 		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
-	@webroot host {$CADDY_DOMAIN} kubbe.{$CADDY_DOMAIN}
-	route @webroot {
+
+	route {
 		crowdsec
 		root * /var/www/kubbe-web
 		file_server
 	}
-	@vpn host vpn.{$CADDY_DOMAIN}
-	route @vpn {
-		crowdsec
-		reverse_proxy 192.168.0.129:51820
+}
+
+# Private services
+mealie.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
-	@wg-easy host wg-easy.{$CADDY_DOMAIN}
-	route @wg-easy {
-		crowdsec
-		reverse_proxy wg-easy:51821
+	import private_proxy mealie:9000
+}
+
+uptime.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
-	@mealie host mealie.{$CADDY_DOMAIN}
-	route @mealie {
-		crowdsec
-		reverse_proxy mealie:9000
+	import private_proxy uptime-kuma:3001
+}
+
+authentik.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
-	@qb host qb.{$CADDY_DOMAIN}
-	route @qb {
-		crowdsec
-		reverse_proxy gluetun_mullvad:6011
+	import private_proxy authentik-server:9000
+}
+
+vaultwarden.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy 192.168.0.129:8070
+}
+
+prowlarr.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy gluetun_mullvad:9696
+}
+
+search.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy searxng:8080
+}
+
+tasks.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy tasks-md:8080
+}
+
+copyparty.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy copyparty:3923
+}
+
+technitium.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy dns-server:5380
+}
+
+homeassistant.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy homeassistant:8123
+}
+
+immich.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy immich-server:2283
+}
+
+wg-easy.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy wg-easy:51821
+}
+
+vpn.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+	import private_proxy 192.168.0.129:51820
+}
+
+# Nothing here, just a catch-all for any other subdomains that are not defined above
+*.{$CADDY_DOMAIN} {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
 	}
 
-	@prowlarr host prowlarr.{$CADDY_DOMAIN}
-	route @prowlarr {
-		crowdsec
-		reverse_proxy gluetun_mullvad:9696
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 5
+		}
+		format json
 	}
-	@jellyfin host jellyfin.{$CADDY_DOMAIN}
-	route @jellyfin {
+
+	route {
 		crowdsec
-		reverse_proxy 192.168.0.129:8096
-	}
-	@pihole host pihole.{$CADDY_DOMAIN}
-	route @pihole {
-		crowdsec
-		reverse_proxy 192.168.0.129:5353
-	}
-	@search host search.{$CADDY_DOMAIN}
-	route @search {
-		crowdsec
-		reverse_proxy searxng:8080
-	}
-	@vaultwarden host vaultwarden.{$CADDY_DOMAIN}
-	route @vaultwarden {
-		crowdsec
-		reverse_proxy 192.168.0.129:8070
-	}
-	@authentik host authentik.{$CADDY_DOMAIN}
-	route @authentik {
-		crowdsec
-		reverse_proxy authentik-server:9000
-	}
-	@copyparty host copyparty.{$CADDY_DOMAIN}
-	route @copyparty {
-		crowdsec
-		reverse_proxy copyparty:3923
-	}
-	@uptime host uptime.{$CADDY_DOMAIN}
-	route @uptime {
-		crowdsec
-		reverse_proxy uptime-kuma:3001
-	}
-	@technitium host technitium.{$CADDY_DOMAIN}
-	route @technitium {
-		crowdsec
-		reverse_proxy dns-server:5380
-	}
-	@tasks host tasks.{$CADDY_DOMAIN}
-	route @tasks {
-		crowdsec
-		reverse_proxy tasks-md:8080
-	}
-	@homeassistant host homeassistant.{$CADDY_DOMAIN}
-	route @homeassistant {
-		crowdsec
-		reverse_proxy homeassistant:8123
-	}
-	@immich host immich.{$CADDY_DOMAIN}
-	route @immich {
-		crowdsec
-		reverse_proxy immich-server:2283
-	}
-	@music-assistant host music-assistant.{$CADDY_DOMAIN}
-	route @music-assistant {
-		crowdsec
-		reverse_proxy 192.168.0.129:8095
+		respond "Not found" 404
 	}
 }

@@ -2,7 +2,7 @@ $ORIGIN wolke-lab.duckdns.org.
 $TTL 3600
 
 @ 900 IN SOA dns-server.wolke-lab.duckdns.org. hostadmin.wolke-lab.duckdns.org. (
-    2026100801 ; Serial
+    2026110901 ; Increment this serial from the current value
     900        ; Refresh
     300        ; Retry
     604800     ; Expire
