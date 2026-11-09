@@ -15,6 +15,7 @@ PodmanArgs=--network-alias=wg-easy
 PublishPort=51820:51820/udp
 
 Volume=wg-easy-data.volume:/etc/wireguard:Z
+Volume=/lib/modules:/lib/modules:ro
 
 Environment=LANG=en
 Environment=WG_DEFAULT_DNS=192.168.0.129
@@ -22,15 +23,15 @@ Environment=WG_ALLOWED_IPS=192.168.0.0/24,10.8.0.0/16
 Environment=WG_DEVICE=eth0
 EnvironmentFile=/etc/wg-easy/.wg-easy.env
 
-PodmanArgs=--sysctl=net.ipv4.ip_forward=AddCapability=NET_ADMIN
-AddCapability=SYS_MODULE
-AddCapability=NET_RAW
+PodmanArgs=--cap-add=NET_ADMIN
+PodmanArgs=--cap-add=NET_RAW
+PodmanArgs=--cap-add=SYS_MODULE
+
 PodmanArgs=--sysctl=net.ipv4.ip_forward=1
 PodmanArgs=--sysctl=net.ipv4.conf.all.src_valid_mark=1
 PodmanArgs=--sysctl=net.ipv6.conf.all.disable_ipv6=0
-PodmanArgs=--sysctl=Sysctl=net.ipv6.conf.all.forwarding=1
-PodmanArgs=--sysctl=net.ipv6.conf.default.forwarding=11
-PodmanArgs=--sysctl=net.ipv4.conf.all.src_valid_mark=1
+PodmanArgs=--sysctl=net.ipv6.conf.all.forwarding=1
+PodmanArgs=--sysctl=net.ipv6.conf.default.forwarding=1
 
 LogDriver=journald
 
