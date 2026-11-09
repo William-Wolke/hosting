@@ -5,7 +5,7 @@ After=network-online.target
 
 [Container]
 ContainerName=wg-easy
-Image=ghcr.io/wg-easy/wg-easy:14
+Image=ghcr.io/wg-easy/wg-easy:15
 AutoUpdate=registry
 
 Network=proxy-net.network
@@ -14,7 +14,7 @@ PodmanArgs=--network-alias=wg-easy
 # Expose the VPN endpoint; Caddy accesses the UI over proxy-net.
 PublishPort=51820:51820/udp
 
-Volume=wg-easy-data.volume:/etc/wireguard
+Volume=wg-easy-data.volume:/etc/wireguard:Z
 
 Environment=LANG=en
 Environment=WG_DEFAULT_DNS=192.168.0.129
@@ -22,8 +22,14 @@ Environment=WG_ALLOWED_IPS=192.168.0.0/24,10.8.0.0/16
 Environment=WG_DEVICE=eth0
 EnvironmentFile=/etc/wg-easy/.wg-easy.env
 
-AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_MODULE
+PodmanArgs=--sysctl=net.ipv4.ip_forward=AddCapability=NET_ADMIN
+AddCapability=SYS_MODULE
+AddCapability=NET_RAW
 PodmanArgs=--sysctl=net.ipv4.ip_forward=1
+PodmanArgs=--sysctl=net.ipv4.conf.all.src_valid_mark=1
+PodmanArgs=--sysctl=net.ipv6.conf.all.disable_ipv6=0
+PodmanArgs=--sysctl=Sysctl=net.ipv6.conf.all.forwarding=1
+PodmanArgs=--sysctl=net.ipv6.conf.default.forwarding=11
 PodmanArgs=--sysctl=net.ipv4.conf.all.src_valid_mark=1
 
 LogDriver=journald
