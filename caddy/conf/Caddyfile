@@ -14,6 +14,12 @@
 	}
 }
 
+(tls_dns) {
+	tls {
+		dns duckdns {$CADDY_DDNS_TOKEN}
+	}
+}
+
 (private_proxy) {
 	log {
 		output file /var/log/caddy/access.log {
@@ -40,11 +46,36 @@
 	}
 }
 
-# Public services
-{$CADDY_DOMAIN}, kubbe.{$CADDY_DOMAIN} {
+# Public services protected by client certificates.
+# Place the CA certificate at /etc/caddy/client-ca.crt on the host
+(mtls_proxy) {
 	tls {
 		dns duckdns {$CADDY_DDNS_TOKEN}
+		client_auth {
+			mode require_and_verify
+			trust_pool file {
+				pem_file /etc/caddy/client-ca.crt
+			}
+		}
 	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 100mb
+			roll_keep 5
+		}
+		format json
+	}
+
+	route {
+		crowdsec
+		reverse_proxy {args[0]}
+	}
+}
+
+# Public services
+{$CADDY_DOMAIN}, kubbe.{$CADDY_DOMAIN} {
+	import tls_dns
 
 	route {
 		crowdsec
@@ -53,99 +84,73 @@
 	}
 }
 
-# Private services
+# Private services, restricted to LAN and WireGuard IP ranges
 mealie.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy mealie:9000
 }
 
 uptime.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy uptime-kuma:3001
 }
 
 authentik.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy authentik-server:9000
 }
 
 vaultwarden.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy 192.168.0.129:8070
 }
 
 prowlarr.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy gluetun_mullvad:9696
 }
 
 search.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy searxng:8080
 }
 
 tasks.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy tasks-md:8080
 }
 
 copyparty.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy copyparty:3923
 }
 
 technitium.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy dns-server:5380
 }
 
 homeassistant.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy homeassistant:8123
 }
 
 immich.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy immich-server:2283
 }
 
 wg-easy.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy wg-easy:51821
 }
 
 vpn.{$CADDY_DOMAIN} {
-	tls {
-		dns duckdns {$CADDY_DDNS_TOKEN}
-	}
+	import tls_dns
 	import private_proxy 192.168.0.129:51820
 }
 
-# Nothing here, just a catch-all for any other subdomains that are not defined above
+# Catch-all for undefined subdomains
 *.{$CADDY_DOMAIN} {
 	tls {
 		dns duckdns {$CADDY_DDNS_TOKEN}
