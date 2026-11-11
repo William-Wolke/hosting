@@ -150,6 +150,11 @@ vpn.{$CADDY_DOMAIN} {
 	import private_proxy 192.168.0.129:51820
 }
 
+vaultls.{$CADDY_DOMAIN} {
+	import tls_dns
+	import private_proxy vaultls:80
+}
+
 # Catch-all for undefined subdomains
 *.{$CADDY_DOMAIN} {
 	tls {

@@ -659,3 +659,46 @@ music-assistant-status:
 		sudo systemctl status music-assistant.service --no-pager && \
 		sudo podman ps --filter name=music-assistant \
 	'
+
+
+.PHONY: vaultls vaultls-env vaultls-status vaultls-help
+
+VAULTLS_UNITS := vaultls.container vaultls-data.volume
+
+vaultls-help:
+	@echo "  vaultls           Deploy VaulTLS Quadlet service"
+	@echo "  vaultls-env       Upload vaultls/.vaultls.env"
+	@echo "  vaultls-status    Show VaulTLS service status"
+
+vaultls:
+	scp $(addprefix ./vaultls/,$(VAULTLS_UNITS)) \
+		./caddy/proxy-net.network william@192.168.0.129:/tmp/
+	ssh -t william@192.168.0.129 '\
+		sudo test -s /etc/vaultls/.vaultls.env || { echo "Missing /etc/vaultls/.vaultls.env - run make vaultls-env first"; exit 1; } && \
+		sudo mkdir -p /etc/containers/systemd && \
+		sudo install -Dm644 /tmp/proxy-net.network /etc/containers/systemd/proxy-net.network && \
+		for f in $(VAULTLS_UNITS); do sudo install -Dm644 /tmp/$$f /etc/containers/systemd/$$f && rm -f /tmp/$$f; done && \
+		sudo systemctl daemon-reload && \
+		sudo systemctl restart vaultls.service && \
+		sudo systemctl status vaultls.service --no-pager \
+	'
+
+vaultls-env:
+	@test -s ./vaultls/.vaultls.env || { echo "Missing or empty vaultls/.vaultls.env (copy vaultls/.vaultls.env.example and set the API secret)"; exit 1; }
+	@chmod 600 ./vaultls/.vaultls.env
+	@set -eu; \
+	host=william@192.168.0.129; \
+	stage=$$(ssh "$$host" 'mktemp -d "$$HOME/.vaultls-env.XXXXXXXX"'); \
+	trap 'ssh "$$host" "rm -rf \"$$stage\"" || true' EXIT; \
+	scp ./vaultls/.vaultls.env "$$host:$$stage/.vaultls.env"; \
+	ssh -t "$$host" "sudo install -d -m 0755 /etc/vaultls && \
+		sudo install -o root -g root -m 0600 \
+		'$$stage/.vaultls.env' /etc/vaultls/.vaultls.env"
+	@echo "Uploaded /etc/vaultls/.vaultls.env"
+	@echo "Run 'make vaultls' to deploy or recreate the container."
+
+vaultls-status:
+	ssh -t william@192.168.0.129 '\
+		sudo systemctl status vaultls.service --no-pager && \
+		sudo podman ps --filter name=vaultls \
+	'
