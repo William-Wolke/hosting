@@ -11,6 +11,7 @@ AutoUpdate=registry
 
 Network=proxy-net.network
 PodmanArgs=--network-alias=uptime-kuma
+PublishPort=127.0.0.1:3001:3001
 
 Volume=uptime-kuma-data.volume:/app/data
 

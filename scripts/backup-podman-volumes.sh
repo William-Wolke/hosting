@@ -63,6 +63,28 @@ cleanup() {
         done
     fi
 
+    if [[ -n "${UPTIME_KUMA_PUSH_URL:-}" ]]; then
+        if (( status == 0 )); then
+            push_status=up
+            push_message=OK
+        else
+            push_status=down
+            push_message="Podman volume backup or service restoration failed"
+        fi
+
+        if ! curl --silent --show-error --fail \
+            --get \
+            --connect-timeout 5 --max-time 10 \
+            --retry 60 --retry-connrefused --retry-delay 5 --retry-max-time 300 \
+            --data-urlencode "status=$push_status" \
+            --data-urlencode "msg=$push_message" \
+            "$UPTIME_KUMA_PUSH_URL" >/dev/null; then
+            log "WARNING: Could not send heartbeat to Uptime Kuma after retries."
+        fi
+    else
+        log "WARNING: UPTIME_KUMA_PUSH_URL is not set; heartbeat not sent."
+    fi
+
     if (( status == 0 )); then
         log "Backup and service restoration completed."
     else

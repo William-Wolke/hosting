@@ -8,6 +8,7 @@ Type=oneshot
 ExecStart=/usr/local/sbin/backup-podman-volumes.sh
 User=root
 Group=root
+EnvironmentFile=/etc/podman-volume-backup.env
 
 # Lower priority so backups are less disruptive
 Nice=10
