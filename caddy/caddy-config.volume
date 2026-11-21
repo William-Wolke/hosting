@@ -3,3 +3,4 @@ Description=Caddy config volume
 
 [Volume]
 VolumeName=caddy_config
+Label=backup=true

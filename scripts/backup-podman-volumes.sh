@@ -16,6 +16,7 @@ SERVICES=(
     wg-easy.service
     uptime-kuma.service
 )
+
 # Keep location updated with makefile
 BACKUP_ROOT="/mnt/storage-box-1/backups/podman-volumes"
 ACTIVE_SERVICES=()
@@ -108,32 +109,31 @@ check_no_writers() {
 
 log "Starting backup."
 
-# Capture command failures instead of hiding them in process substitution.
-if ! volume_list=$(podman volume ls -q 2>>"$LOG_FILE"); then
-    die "Cannot list Podman volumes."
+# Only volumes explicitly labeled backup=true are included.
+if ! volume_list=$(podman volume ls \
+    --filter "label=backup=true" \
+    --format '{{.Name}}' 2>>"$LOG_FILE"); then
+    die "Cannot list labeled Podman volumes."
 fi
 
 if [[ -z "$volume_list" ]]; then
-    log "No volumes found."
+    log "No volumes found with backup=true label."
     exit 0
 fi
 
-# Filter out certain volumes
 VOLUMES=()
 while IFS= read -r volume; do
-    case "$volume" in
-        immich-model-cache)
-            log "Skipping excluded volume: $volume"
-            continue
-            ;;
-    esac
+    [[ -n "$volume" ]] || continue
     VOLUMES+=("$volume")
 done <<<"$volume_list"
 
 if (( ${#VOLUMES[@]} == 0 )); then
-    log "No volumes remain after exclusions."
+    log "No volumes found with backup=true label."
     exit 0
 fi
+
+log "Volumes selected for backup: ${VOLUMES[*]}"
+
 # Validate all units before stopping anything.
 for unit in "${SERVICES[@]}"; do
     load_state=$(systemctl show "$unit" --property=LoadState --value)
@@ -189,6 +189,7 @@ for volume in "${VOLUMES[@]}"; do
 
     # Catch containers restarted during this export.
     check_no_writers "$volume"
+
     gzip -t "$PARTIAL_FILE" 2>>"$LOG_FILE" ||
         die "Archive verification failed for $volume."
 

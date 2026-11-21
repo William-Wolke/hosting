@@ -1,2 +1,3 @@
 [Volume]
 VolumeName=mealie-data
+Label=backup=true

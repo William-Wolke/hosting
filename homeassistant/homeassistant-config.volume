@@ -3,3 +3,4 @@ Description=HomeAssistant config volume
 
 [Volume]
 VolumeName=homeassistant-config
+Label=backup=true

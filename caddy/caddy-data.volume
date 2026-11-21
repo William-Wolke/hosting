@@ -3,3 +3,4 @@ Description=Caddy data volume
 
 [Volume]
 VolumeName=caddy_data
+Label=backup=true

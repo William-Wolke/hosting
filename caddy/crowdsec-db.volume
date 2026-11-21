@@ -3,3 +3,4 @@ Description=CrowdSec database volume
 
 [Volume]
 VolumeName=crowdsec-db
+Label=backup=true

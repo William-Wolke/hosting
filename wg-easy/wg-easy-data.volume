@@ -1,2 +1,3 @@
 [Volume]
 VolumeName=wg-easy-data
+Label=backup=true

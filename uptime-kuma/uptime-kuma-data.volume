@@ -1,2 +1,3 @@
 [Volume]
 VolumeName=uptime-kuma-data
+Label=backup=true
